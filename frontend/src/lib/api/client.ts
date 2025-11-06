@@ -86,3 +86,8 @@ class APIClient {
 
 export const apiClient = new APIClient();
 export default apiClient;
+
+// Expose to window for testing in console
+if (typeof window !== 'undefined') {
+  (window as any).apiClient = apiClient;
+}

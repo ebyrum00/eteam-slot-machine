@@ -1,7 +1,7 @@
-import { ReactNode } from 'react';
-import { motion, HTMLMotionProps } from 'framer-motion';
+import type { ReactNode, ComponentPropsWithoutRef } from 'react';
+import { motion } from 'framer-motion';
 
-interface CardProps extends HTMLMotionProps<"div"> {
+interface CardProps extends ComponentPropsWithoutRef<typeof motion.div> {
   children: ReactNode;
   className?: string;
 }

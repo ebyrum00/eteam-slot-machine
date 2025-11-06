@@ -91,8 +91,10 @@ export function TVDisplay() {
         <ScreenTransition transitionKey="results">
           {currentSpin && showResults ? (
             <ResultsScreen spin={currentSpin} />
+          ) : currentSpin ? (
+            <SpinningAnimation spin={currentSpin} />
           ) : (
-            <SpinningAnimation spin={currentSpin!} />
+            <FullPageLoading message="Loading results..." />
           )}
         </ScreenTransition>
       );

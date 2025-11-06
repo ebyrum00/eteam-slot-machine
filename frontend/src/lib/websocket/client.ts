@@ -91,3 +91,8 @@ class WebSocketClient {
 
 export const wsClient = new WebSocketClient();
 export default wsClient;
+
+// Expose to window for testing in console
+if (typeof window !== 'undefined') {
+  (window as any).wsClient = wsClient;
+}

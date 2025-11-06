@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useGameStore } from '../stores/gameStore';
 import { wsClient } from './client';
+import { apiClient } from '../api/client';
 import type { StateChangedEvent } from '../../types/api';
 
 export function useWebSocket() {
@@ -8,6 +9,11 @@ export function useWebSocket() {
   const setIsConnected = useGameStore((state) => state.setIsConnected);
 
   useEffect(() => {
+    // Fetch initial game state
+    apiClient.getGameState()
+      .then(setGameState)
+      .catch((error) => console.error('Failed to fetch initial game state:', error));
+
     // Connect to WebSocket
     wsClient.connect();
     setIsConnected(true);
