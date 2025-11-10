@@ -4,6 +4,17 @@ module Api
       player = Player.find(params[:player_id])
       spin = player.spins.create!
 
+      # Broadcast that a spin has started (game state: spinning)
+      ActionCable.server.broadcast(
+        "game_updates",
+        {
+          event: "state_changed",
+          state: "spinning",
+          player_id: player.id,
+          spin_id: spin.id
+        }
+      )
+
       render json: spin_json(spin), status: :created
     rescue ActiveRecord::RecordNotFound
       render json: { error: 'Player not found' }, status: :not_found
