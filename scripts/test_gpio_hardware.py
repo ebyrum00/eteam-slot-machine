@@ -15,21 +15,44 @@ LED_PIN = 18     # Physical Pin 12
 def test_led():
     """Test LED by turning it on for 3 seconds"""
     print("\n=== LED Test ===")
-    print("Testing LED on GPIO23...")
+    print(f"Testing LED on GPIO{LED_PIN}...")
 
     chip = gpiod.Chip('/dev/gpiochip4')
+
+    # Test 1: Normal polarity (ACTIVE = HIGH = 3.3V)
+    print("\nTest 1: Setting GPIO HIGH (3.3V)...")
     line_settings = {LED_PIN: gpiod.LineSettings(direction=Direction.OUTPUT, output_value=Value.INACTIVE)}
     request = chip.request_lines(consumer="led-test", config=line_settings)
 
-    print("LED should turn ON now for 3 seconds...")
+    print("  LED should turn ON now for 2 seconds...")
     request.set_value(LED_PIN, Value.ACTIVE)
-    time.sleep(3)
+    time.sleep(2)
 
-    print("LED should turn OFF now...")
+    print("  Turning OFF...")
     request.set_value(LED_PIN, Value.INACTIVE)
+    time.sleep(1)
 
     request.release()
-    print("✓ LED test complete")
+
+    # Test 2: Try pulsing (in case it's very dim)
+    print("\nTest 2: Rapid pulsing (if LED is dim)...")
+    line_settings = {LED_PIN: gpiod.LineSettings(direction=Direction.OUTPUT, output_value=Value.INACTIVE)}
+    request = chip.request_lines(consumer="led-test", config=line_settings)
+
+    print("  Watch for rapid blinking for 3 seconds...")
+    start = time.time()
+    while time.time() - start < 3:
+        request.set_value(LED_PIN, Value.ACTIVE)
+        time.sleep(0.1)
+        request.set_value(LED_PIN, Value.INACTIVE)
+        time.sleep(0.1)
+
+    request.release()
+    print("\n✓ LED test complete")
+
+    print("\nDid you see the LED light up or blink?")
+    print("  - If YES: Great! The LED is working.")
+    print("  - If NO: Your LED may need external 5V power (common for arcade buttons)")
     print()
 
 def test_button():
