@@ -11,7 +11,9 @@ module Api
           event: "state_changed",
           state: "spinning",
           player_id: player.id,
-          spin_id: spin.id
+          player_name: player.name,
+          spin_id: spin.id,
+          timestamp: Time.current.to_i
         }
       )
 
