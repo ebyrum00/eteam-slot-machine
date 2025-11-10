@@ -1,6 +1,6 @@
 #!/bin/bash
-# Raspberry Pi Kiosk Mode Configuration
-# Configures Chromium to launch in kiosk mode on boot
+# Raspberry Pi Kiosk Mode Configuration (X11 + Openbox)
+# Configures Chromium to launch in kiosk mode on boot and rotates HDMI-A-1 90°
 
 set -e
 
@@ -9,23 +9,32 @@ KIOSK_URL="${1:-http://localhost:5173?display=tv}"
 
 echo "🖥️  Configuring kiosk mode for URL: $KIOSK_URL"
 
-# Create autostart directory
+# Create autostart directories
 mkdir -p ~/.config/openbox
 mkdir -p ~/.config/lxsession/LXDE-pi
 
-# Create Openbox autostart script
+# Create Openbox autostart script (X11 path)
 echo "📝 Creating Openbox autostart configuration..."
 cat > ~/.config/openbox/autostart << EOF
-# Rotate display to portrait mode (Wayland)
-sleep 2 && wlr-randr --output HDMI-A-1 --transform 90 &
+# --- Kiosk Autostart (Openbox/X11) ---
 
-# Hide cursor after inactivity
+# Log everything from this file
+exec >> "\$HOME/.kiosk.log" 2>&1
+set -x
+
+# Prevent screen blanking / power saving (X11)
+(sleep 1; DISPLAY=:0 xset s off; DISPLAY=:0 xset -dpms; DISPLAY=:0 xset s noblank) &
+
+# Rotate display to portrait (clockwise / 90°) on HDMI-A-1
+(sleep 3; DISPLAY=:0 xrandr --output HDMI-A-1 --rotate right) &
+
+# Hide cursor after inactivity (X11)
 unclutter -idle 0.1 -root &
 
 # Start compositor for smooth animations
 compton --backend glx --vsync opengl-swc &
 
-# Launch Chromium in kiosk mode
+# Launch Chromium in kiosk mode (background)
 chromium-browser \\
   --kiosk \\
   --noerrdialogs \\
@@ -59,27 +68,24 @@ chromium-browser \\
   --num-raster-threads=4 \\
   --force-device-scale-factor=1 \\
   --check-for-update-interval=31536000 \\
-  '$KIOSK_URL'
+  "$KIOSK_URL" &
 EOF
 
-# Create LXDE autostart
-cat > ~/.config/lxsession/LXDE-pi/autostart << EOF
-@xset s off
-@xset -dpms
-@xset s noblank
+# Create LXDE autostart (kept minimal; openbox session is launched via .xinitrc)
+cat > ~/.config/lxsession/LXDE-pi/autostart << 'EOF'
 @openbox-session
 EOF
 
 # Make scripts executable
 chmod +x ~/.config/openbox/autostart
 
-# Configure autologin
+# Configure autologin on tty1 (so .bash_profile can start X)
 echo "🔐 Configuring autologin..."
 sudo mkdir -p /etc/systemd/system/getty@tty1.service.d
-sudo tee /etc/systemd/system/getty@tty1.service.d/autologin.conf > /dev/null << EOF
+sudo tee /etc/systemd/system/getty@tty1.service.d/autologin.conf > /dev/null << 'EOF'
 [Service]
 ExecStart=
-ExecStart=-/sbin/agetty --autologin pi --noclear %I \$TERM
+ExecStart=-/sbin/agetty --autologin pi --noclear %I $TERM
 EOF
 
 # Configure to start X on login
@@ -95,11 +101,10 @@ EOF
 fi
 
 # Create .xinitrc to launch openbox
-cat > ~/.xinitrc << EOF
+cat > ~/.xinitrc << 'EOF'
 #!/bin/sh
 exec openbox-session
 EOF
-
 chmod +x ~/.xinitrc
 
 echo "✅ Kiosk mode configured!"
