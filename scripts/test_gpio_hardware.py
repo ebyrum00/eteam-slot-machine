@@ -54,9 +54,9 @@ def test_button():
 
         if value != last_value:
             if value == Value.INACTIVE:  # Button pressed (pulled to ground)
-                print(f"  Button PRESSED (value: {int(value)})")
+                print(f"  Button PRESSED (value: 0)")
             else:  # Button released (pulled high)
-                print(f"  Button RELEASED (value: {int(value)})")
+                print(f"  Button RELEASED (value: 1)")
             last_value = value
 
         time.sleep(0.05)
