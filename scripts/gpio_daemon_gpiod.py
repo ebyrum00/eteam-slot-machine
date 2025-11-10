@@ -66,8 +66,19 @@ class ArcadeButtonController:
         self.ws_connected = False
         self.running = True
 
-        # Get GPIO chip
-        self.chip = gpiod.Chip('gpiochip4')  # Pi 5 uses gpiochip4
+        # Get GPIO chip - try different chip numbers for Pi 5 compatibility
+        self.chip = None
+        for chip_name in ['gpiochip4', 'gpiochip0', 'gpiochip1']:
+            try:
+                self.chip = gpiod.Chip(chip_name)
+                logger.info("Using GPIO chip: %s", chip_name)
+                break
+            except Exception as e:
+                logger.debug("Failed to open %s: %s", chip_name, e)
+                continue
+
+        if self.chip is None:
+            raise RuntimeError("Could not find any GPIO chip")
 
         # Setup button line (input with pull-up)
         self.button_line = self.chip.get_line(BUTTON_PIN)
