@@ -63,7 +63,8 @@ Rails.application.configure do
   config.action_cable.allowed_request_origins = [
     'http://localhost:3000',
     'http://localhost:5173',  # Vite dev server
-    /http:\/\/192\.168\.\d+\.\d+:3000/
+    /http:\/\/192\.168\.\d+\.\d+:3000/,
+    /http:\/\/192\.168\.\d+\.\d+:5173/  # Network access to Vite
   ]
 
   # Raise error when a before_action's only/except options reference missing actions.

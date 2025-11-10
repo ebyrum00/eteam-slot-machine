@@ -1,7 +1,17 @@
 import { createConsumer, type Consumer, type Subscription } from '@rails/actioncable';
 import type { StateChangedEvent, ButtonPressedEvent } from '../../types/api';
 
-const WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:3000/cable';
+// Auto-detect WebSocket URL based on current location
+const getWsUrl = (): string => {
+  if (import.meta.env.VITE_WS_URL) {
+    return import.meta.env.VITE_WS_URL;
+  }
+
+  const currentHost = window.location.hostname;
+  return `ws://${currentHost}:3000/cable`;
+};
+
+const WS_URL = getWsUrl();
 
 type GameUpdateEvent = StateChangedEvent | ButtonPressedEvent;
 type GameUpdateCallback = (event: GameUpdateEvent) => void;

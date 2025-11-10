@@ -8,7 +8,19 @@ import type {
   ApplyBonusRequest,
 } from '../../types/api';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+// Auto-detect API URL based on current location
+// If running on localhost, use localhost
+// If running on network IP, use the same host but port 3000
+const getApiBaseUrl = (): string => {
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL;
+  }
+
+  const currentHost = window.location.hostname;
+  return `http://${currentHost}:3000`;
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 class APIClient {
   private baseUrl: string;
