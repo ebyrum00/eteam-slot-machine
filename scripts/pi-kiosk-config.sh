@@ -1,5 +1,5 @@
 #!/bin/bash
-# Raspberry Pi Kiosk Mode Configuration - X11 ONLY
+# Raspberry Pi Kiosk Mode Configuration - X11 LXDE
 # Two goals:
 # 1. Rotate 1920x1080 display left 90 degrees
 # 2. Launch Chromium in kiosk mode
@@ -14,33 +14,25 @@ echo "📍 URL: $KIOSK_URL"
 # Create autostart directory
 mkdir -p ~/.config/lxsession/LXDE-pi
 
-# Create LXDE autostart file
+# Create LXDE autostart file (don't start lxpanel or pcmanfm for true kiosk)
 cat > ~/.config/lxsession/LXDE-pi/autostart << EOF
-@lxpanel --profile LXDE-pi
-@pcmanfm --desktop --profile LXDE-pi
-
 # Disable screen blanking
 @xset s off
 @xset -dpms
 @xset s noblank
 
 # Rotate display left (90 degrees counterclockwise)
-@xrandr --output HDMI-A-1 --mode 1920x1080 --rotate left
+@sh -c "sleep 2 && xrandr --output HDMI-A-1 --mode 1920x1080 --rotate left"
 
 # Hide cursor
 @unclutter -idle 0.1 -root
 
 # Launch Chromium in kiosk mode
-@chromium-browser --kiosk --noerrdialogs --disable-infobars --no-first-run $KIOSK_URL
+@chromium-browser --kiosk --noerrdialogs --disable-infobars --no-first-run --disable-restore-session-state --disable-session-crashed-bubble $KIOSK_URL
 EOF
 
 echo "✅ Kiosk configuration created!"
 echo ""
-echo "Next steps:"
-echo "1. Configure autologin (if not already done):"
-echo "   sudo raspi-config"
-echo "   Select: System Options -> Boot / Auto Login -> Desktop Autologin"
-echo ""
-echo "2. Reboot: sudo reboot"
-echo ""
-echo "The display will auto-rotate and launch Chromium on boot."
+echo "Test with: startx"
+echo "Configure autologin: sudo raspi-config -> System Options -> Boot / Auto Login -> Desktop Autologin"
+echo "Then reboot: sudo reboot"
