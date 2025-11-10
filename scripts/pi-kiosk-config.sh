@@ -16,13 +16,8 @@ mkdir -p ~/.config/lxsession/LXDE-pi
 # Create Openbox autostart script
 echo "📝 Creating Openbox autostart configuration..."
 cat > ~/.config/openbox/autostart << EOF
-# Disable screen blanking
-xset s off
-xset s noblank
-xset -dpms
-
 # Rotate display to portrait mode (Wayland)
-wlr-randr --output HDMI-A-1 --transform 90 &
+sleep 2 && wlr-randr --output HDMI-A-1 --transform 90 &
 
 # Hide cursor after inactivity
 unclutter -idle 0.1 -root &
