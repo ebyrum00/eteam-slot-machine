@@ -9,8 +9,8 @@ import gpiod
 import time
 from gpiod.line import Direction, Value, Bias
 
-BUTTON_PIN = 17
-LED_PIN = 23
+BUTTON_PIN = 17  # Physical Pin 11
+LED_PIN = 18     # Physical Pin 12
 
 def test_led():
     """Test LED by turning it on for 3 seconds"""
@@ -72,8 +72,8 @@ def main():
     print("=" * 60)
     print()
     print("This script tests:")
-    print("  - LED on GPIO23 (should light up)")
-    print("  - Button on GPIO17 (should detect presses)")
+    print("  - LED on GPIO18 (Physical Pin 12)")
+    print("  - Button on GPIO17 (Physical Pin 11)")
     print()
     print("Make sure gpio-daemon is stopped first:")
     print("  sudo systemctl stop gpio-daemon")
@@ -90,7 +90,7 @@ def main():
         print("Tests complete!")
         print()
         print("If LED didn't light up:")
-        print("  - Check wiring: GPIO23 (Pin 16) → 220Ω resistor → LED+ → LED- → GND")
+        print("  - Check wiring: GPIO18 (Pin 12) → LED+ and Pin 14 (GND) → LED-")
         print("  - Verify LED polarity (longer leg is positive)")
         print("  - Check resistor value (should be 220Ω - 1kΩ)")
         print()
