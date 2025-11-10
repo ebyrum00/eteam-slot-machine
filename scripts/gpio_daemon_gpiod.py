@@ -17,7 +17,6 @@ from typing import Optional
 
 try:
     import gpiod
-    from gpiod.line import Direction, Value, Edge, Bias
 except ImportError:
     print("libgpiod not available. Install with: sudo apt install python3-libgpiod")
     sys.exit(1)
@@ -84,13 +83,13 @@ class ArcadeButtonController:
         if self.chip is None:
             raise RuntimeError(f"Could not find any GPIO chip. Errors: {'; '.join(errors)}")
 
-        # Setup button line (input with pull-up)
+        # Setup button line (input with pull-up) - using older gpiod API
         self.button_line = self.chip.get_line(BUTTON_PIN)
-        self.button_line.request(consumer="button", type=Direction.INPUT, bias=Bias.PULL_UP, edge_detection=Edge.FALLING)
+        self.button_line.request(consumer="button", type=gpiod.LINE_REQ_DIR_IN, flags=gpiod.LINE_REQ_FLAG_BIAS_PULL_UP)
 
         # Setup LED line (output)
         self.led_line = self.chip.get_line(LED_PIN)
-        self.led_line.request(consumer="led", type=Direction.OUTPUT, default_value=Value.INACTIVE)
+        self.led_line.request(consumer="led", type=gpiod.LINE_REQ_DIR_OUT, default_val=0)
 
         logger.info("GPIO initialized - Button: GPIO%d, LED: GPIO%d", BUTTON_PIN, LED_PIN)
 
@@ -101,16 +100,19 @@ class ArcadeButtonController:
     def monitor_button(self):
         """Monitor button presses in a separate thread"""
         logger.info("Button monitoring thread started")
+        last_state = 1
         while self.running:
-            # Wait for button press event (with timeout)
-            if self.button_line.wait_edge_events(timeout=0.1):
-                # Read and consume the event
-                events = self.button_line.read_edge_events()
-                for event in events:
-                    if event.event_type == Edge.FALLING:
-                        self.button_pressed()
+            # Read button state (active low with pull-up)
+            current_state = self.button_line.get_value()
+
+            # Detect falling edge (button press)
+            if last_state == 1 and current_state == 0:
+                self.button_pressed()
                 # Debounce
                 time.sleep(0.3)
+
+            last_state = current_state
+            time.sleep(0.01)  # 10ms polling
 
     def button_pressed(self):
         """Handle button press"""
@@ -165,9 +167,9 @@ class ArcadeButtonController:
 
         # Start new LED behavior
         if state == LED_OFF:
-            self.led_line.set_value(Value.INACTIVE)
+            self.led_line.set_value(0)
         elif state == LED_ON:
-            self.led_line.set_value(Value.ACTIVE)
+            self.led_line.set_value(1)
         elif state == LED_PULSING:
             self.led_thread = threading.Thread(target=self.pulse_led, daemon=True)
             self.led_thread.start()
@@ -180,9 +182,9 @@ class ArcadeButtonController:
             for i in range(10):
                 if self.stop_led_thread:
                     break
-                self.led_line.set_value(Value.ACTIVE)
+                self.led_line.set_value(1)
                 time.sleep(0.05)
-                self.led_line.set_value(Value.INACTIVE)
+                self.led_line.set_value(0)
                 time.sleep(0.05)
 
             # Brief pause
