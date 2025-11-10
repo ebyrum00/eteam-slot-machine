@@ -69,13 +69,14 @@ class ArcadeButtonController:
         # Get GPIO chip - try different chip numbers for Pi 5 compatibility
         self.chip = None
         errors = []
-        for chip_name in ['gpiochip4', 'gpiochip0', 'gpiochip1']:
+        for chip_num in [4, 0, 1]:
+            chip_path = f'/dev/gpiochip{chip_num}'
             try:
-                self.chip = gpiod.Chip(chip_name)
-                logger.info("Using GPIO chip: %s", chip_name)
+                self.chip = gpiod.Chip(chip_path)
+                logger.info("Using GPIO chip: %s", chip_path)
                 break
             except Exception as e:
-                error_msg = f"{chip_name}: {type(e).__name__}: {str(e)}"
+                error_msg = f"{chip_path}: {type(e).__name__}: {str(e)}"
                 logger.error("Failed to open %s", error_msg)
                 errors.append(error_msg)
                 continue
