@@ -25,7 +25,7 @@ cat > ~/.config/lxsession/LXDE-pi/autostart << EOF
 @xset s noblank
 
 # Rotate display left (90 degrees counterclockwise)
-@xrandr --output HDMI-1 --mode 1920x1080 --rotate left
+@xrandr --output HDMI-A-1 --mode 1920x1080 --rotate left
 
 # Hide cursor
 @unclutter -idle 0.1 -root
