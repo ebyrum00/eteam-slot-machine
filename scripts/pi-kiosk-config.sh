@@ -21,7 +21,8 @@ xset s off
 xset s noblank
 xset -dpms
 
-xrandr --output HDMI-1 --rotate left &
+# Rotate display to portrait mode (Wayland)
+wlr-randr --output HDMI-A-1 --transform 90 &
 
 # Hide cursor after inactivity
 unclutter -idle 0.1 -root &
