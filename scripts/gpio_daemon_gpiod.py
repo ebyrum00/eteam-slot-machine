@@ -85,8 +85,9 @@ class ArcadeButtonController:
             raise RuntimeError(f"Could not find any GPIO chip. Errors: {'; '.join(errors)}")
 
         # Setup button and LED lines using gpiod v2 API
+        # Note: Using polling instead of edge detection for better reliability
         line_settings_button = {
-            BUTTON_PIN: gpiod.LineSettings(direction=Direction.INPUT, bias=Bias.PULL_UP, edge_detection=Edge.FALLING)
+            BUTTON_PIN: gpiod.LineSettings(direction=Direction.INPUT, bias=Bias.PULL_UP)
         }
         line_settings_led = {
             LED_PIN: gpiod.LineSettings(direction=Direction.OUTPUT, output_value=Value.INACTIVE)
@@ -95,6 +96,9 @@ class ArcadeButtonController:
         self.button_request = self.chip.request_lines(consumer="button", config=line_settings_button)
         self.led_request = self.chip.request_lines(consumer="led", config=line_settings_led)
 
+        # Track button state for edge detection via polling
+        self.last_button_value = Value.ACTIVE  # Start as not pressed (pulled high)
+
         logger.info("GPIO initialized - Button: GPIO%d, LED: GPIO%d", BUTTON_PIN, LED_PIN)
 
         # Start button monitoring thread
@@ -102,16 +106,20 @@ class ArcadeButtonController:
         self.button_thread.start()
 
     def monitor_button(self):
-        """Monitor button presses in a separate thread"""
-        logger.info("Button monitoring thread started")
+        """Monitor button presses via polling (more reliable than edge detection)"""
+        logger.info("Button monitoring thread started (polling mode)")
         while self.running:
-            # Wait for edge event with timeout
-            if self.button_request.wait_edge_events(timeout=0.1):
-                events = self.button_request.read_edge_events()
-                for event in events:
-                    if event.event_type == Edge.FALLING:
-                        self.button_pressed()
-                        time.sleep(0.3)  # Debounce
+            # Read current button value
+            current_value = self.button_request.get_value(BUTTON_PIN)
+
+            # Detect falling edge (button pressed: HIGH -> LOW)
+            if self.last_button_value == Value.ACTIVE and current_value == Value.INACTIVE:
+                logger.info("Button press detected (falling edge)")
+                self.button_pressed()
+                time.sleep(0.3)  # Debounce - wait for button to settle
+
+            self.last_button_value = current_value
+            time.sleep(0.01)  # Poll every 10ms
 
     def button_pressed(self):
         """Handle button press"""
