@@ -10,8 +10,8 @@ echo "📦 Installing Python packages..."
 # Use system packages for better compatibility on Raspberry Pi OS
 sudo apt install -y python3-rpi.gpio python3-requests
 
-# Install websocket-client using pip with break-system-packages
-pip3 install --break-system-packages websocket-client
+# Install websocket-client system-wide for root user (systemd service needs this)
+sudo pip3 install --break-system-packages websocket-client
 
 # Make GPIO daemon executable
 chmod +x ~/winston-slots/scripts/gpio_daemon.py

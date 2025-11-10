@@ -14,7 +14,7 @@ sudo apt upgrade -y
 # Install required packages for graphics performance
 echo "🎨 Installing graphics and display packages..."
 sudo apt install -y \
-  chromium-browser \
+  chromium \
   unclutter \
   xdotool \
   x11-xserver-utils \
@@ -23,7 +23,7 @@ sudo apt install -y \
   lightdm \
   mesa-utils \
   libgl1-mesa-dri \
-  libgles2-mesa
+  wlr-randr
 
 # Install compositor for better performance
 sudo apt install -y compton
