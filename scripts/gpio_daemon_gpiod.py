@@ -35,8 +35,8 @@ except ImportError:
     sys.exit(1)
 
 # Configuration
-BUTTON_PIN = 17  # GPIO17 for button switch
-LED_PIN = 23     # GPIO23 for button LED
+BUTTON_PIN = 17  # GPIO17 for button switch (Physical Pin 11)
+LED_PIN = 18     # GPIO18 for button LED (Physical Pin 12)
 BACKEND_URL = "http://192.168.100.247:3000"  # Connect to Mac dev server
 WS_URL = "ws://192.168.100.247:3000/cable"
 
