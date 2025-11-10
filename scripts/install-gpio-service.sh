@@ -7,7 +7,11 @@ echo "🎮 Installing GPIO daemon for arcade button..."
 
 # Install Python dependencies
 echo "📦 Installing Python packages..."
-pip3 install RPi.GPIO websocket-client requests
+# Use system packages for better compatibility on Raspberry Pi OS
+sudo apt install -y python3-rpi.gpio python3-requests
+
+# Install websocket-client using pip with break-system-packages
+pip3 install --break-system-packages websocket-client
 
 # Make GPIO daemon executable
 chmod +x ~/winston-slots/scripts/gpio_daemon.py
