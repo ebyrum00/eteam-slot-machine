@@ -237,6 +237,7 @@ class WebSocketClient:
         self.controller = controller
         self.ws = None
         self.running = True
+        self.state_sync_thread = None
 
     def on_message(self, ws, message):
         """Handle incoming WebSocket messages"""
@@ -259,6 +260,18 @@ class WebSocketClient:
 
             if data.get("type") == "confirm_subscription":
                 logger.info("Subscribed to GameChannel")
+                # Fetch current game state to sync
+                try:
+                    response = requests.get(f"{BACKEND_URL}/api/game_state", timeout=5)
+                    if response.status_code == 200:
+                        state_data = response.json()
+                        logger.info("Fetched current state: %s", state_data)
+                        self.controller.handle_state_change(
+                            state_data.get("state"),
+                            state_data.get("current_player_id")
+                        )
+                except Exception as e:
+                    logger.error("Failed to fetch initial game state: %s", e)
                 return
 
             # Handle game state updates
@@ -288,6 +301,11 @@ class WebSocketClient:
         logger.info("WebSocket connected")
         self.controller.ws_connected = True
 
+        # Start periodic state sync thread
+        if not self.state_sync_thread or not self.state_sync_thread.is_alive():
+            self.state_sync_thread = threading.Thread(target=self.sync_state_periodically, daemon=True)
+            self.state_sync_thread.start()
+
     def connect(self):
         """Connect to WebSocket"""
         logger.info("Connecting to WebSocket: %s", WS_URL)
@@ -304,8 +322,30 @@ class WebSocketClient:
         ws_thread = threading.Thread(target=self.ws.run_forever, daemon=True)
         ws_thread.start()
 
+    def sync_state_periodically(self):
+        """Periodically fetch and sync game state (every 5 seconds)"""
+        logger.info("State sync thread started")
+        while self.running:
+            try:
+                time.sleep(5)  # Poll every 5 seconds
+                response = requests.get(f"{BACKEND_URL}/api/game_state", timeout=5)
+                if response.status_code == 200:
+                    state_data = response.json()
+                    current_state = state_data.get("state")
+                    current_player_id = state_data.get("current_player_id")
+
+                    # Only log if state actually changed
+                    if (current_state != self.controller.current_state or
+                        current_player_id != self.controller.current_player_id):
+                        logger.info("State sync: %s (player: %s)", current_state, current_player_id)
+                        self.controller.handle_state_change(current_state, current_player_id)
+            except Exception as e:
+                logger.debug("State sync error (will retry): %s", e)
+        logger.info("State sync thread stopped")
+
     def disconnect(self):
         """Disconnect from WebSocket"""
+        self.running = False
         if self.ws:
             self.ws.close()
 

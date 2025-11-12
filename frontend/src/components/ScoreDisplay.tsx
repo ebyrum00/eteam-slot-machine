@@ -8,9 +8,9 @@ interface ScoreDisplayProps {
 }
 
 const sizeClasses = {
-  sm: 'text-2xl',
-  md: 'text-4xl',
-  lg: 'text-6xl',
+  sm: 'text-3xl',      // 30px
+  md: 'text-5xl',      // 48px
+  lg: 'text-[80px]',   // 80px - for 1080x1920
 };
 
 export function ScoreDisplay({
@@ -29,9 +29,9 @@ export function ScoreDisplay({
   const Component = animated ? motion.div : 'div';
 
   return (
-    <div className="flex flex-col items-center gap-2">
+    <div className="flex flex-col items-center gap-4">
       {label && (
-        <span className="text-gray-400 text-sm uppercase tracking-wider font-semibold">
+        <span className="text-gray-400 text-2xl uppercase tracking-wider font-semibold">
           {label}
         </span>
       )}
@@ -69,17 +69,17 @@ export function ReelValueDisplay({ values }: ReelValueDisplayProps) {
   ];
 
   return (
-    <div className="grid grid-cols-5 gap-4">
+    <div className="grid grid-cols-5 gap-6">
       {reels.map((reel, index) => (
         <motion.div
           key={reel.name}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: index * 0.1 }}
-          className="bg-gray-700 rounded-lg p-4 text-center"
+          className="bg-gray-700 rounded-lg p-6 text-center"
         >
-          <div className="text-xs text-gray-400 mb-2">{reel.name}</div>
-          <div className="text-xl font-bold text-white">
+          <div className="text-xl text-gray-400 mb-3">{reel.name}</div>
+          <div className="text-2xl font-bold text-white">
             {new Intl.NumberFormat('en-US', {
               style: 'currency',
               currency: 'USD',

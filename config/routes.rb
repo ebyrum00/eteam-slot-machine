@@ -8,7 +8,9 @@ Rails.application.routes.draw do
   # API routes
   namespace :api do
     resources :players, only: [:create]
-    resource :game_state, only: [:show, :create]
+    resource :game_state, only: [:show, :create] do
+      post :transition_to_results, on: :collection
+    end
     resources :spins, only: [:create, :show] do
       member do
         patch :apply_bonus

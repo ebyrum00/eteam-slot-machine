@@ -13,7 +13,7 @@ import {
   WinTier
 } from '../../utils/winTiers';
 import { audioManager, SOUNDS } from '../../utils/audioManager';
-import { RESULTS_ANIMATION } from '../../config';
+import { RESULTS_ANIMATION, PORTRAIT_LAYOUT } from '../../config';
 import { useGameStore } from '../../lib/stores/gameStore';
 
 interface ResultsScreenProps {
@@ -87,7 +87,7 @@ export function ResultsScreen({ spin }: ResultsScreenProps) {
 
   return (
     <ScreenShake shake={shake} intensity={screenShakeIntensity}>
-      <div className="min-h-screen flex items-center justify-center p-12 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
+      <div className={`min-h-screen flex items-center justify-center ${PORTRAIT_LAYOUT.padding.screen} bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900`}>
         {/* Big win effects with tiered intensity */}
         {showBigWinEffects && (
           <>
@@ -118,20 +118,20 @@ export function ResultsScreen({ spin }: ResultsScreenProps) {
           </>
         )}
 
-        <div className="w-full max-w-7xl space-y-12 relative z-10">
+        <div className={`w-full max-w-7xl ${PORTRAIT_LAYOUT.spacing.section} relative z-10`}>
           {/* Celebration header with player name */}
           <motion.div
             initial={{ opacity: 0, scale: 0.5 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ type: 'spring', stiffness: 200, damping: 15 }}
-            className="text-center space-y-6"
+            className={`text-center ${PORTRAIT_LAYOUT.spacing.content}`}
           >
             {/* Player name + Total label */}
             <motion.p
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
-              className="text-5xl font-bold text-gray-300 uppercase tracking-wide"
+              className={`${PORTRAIT_LAYOUT.typography.large} font-bold text-gray-300 uppercase tracking-wide`}
             >
               {playerName.toUpperCase()}'S TOTAL
             </motion.p>
@@ -148,21 +148,27 @@ export function ResultsScreen({ spin }: ResultsScreenProps) {
                     repeat: Infinity,
                     ease: 'easeInOut',
                   }}
-                  className="text-9xl font-bold"
+                  className={`${PORTRAIT_LAYOUT.typography.hero} font-bold`}
                 >
                   🍌 BONUS! 🍌
                 </motion.h1>
-                <p className="text-5xl text-gray-300">
+                <p className={`${PORTRAIT_LAYOUT.typography.large} text-gray-300`}>
                   {spin.banana_count} Bananas! Bonus wheel activated!
                 </p>
               </>
             ) : (
-              <h1 className={`text-8xl font-bold ${
-                winTier === WinTier.Legendary ? 'text-yellow-400 drop-shadow-[0_0_40px_rgba(251,191,36,0.9)]' :
-                winTier === WinTier.Epic ? 'text-orange-500 drop-shadow-[0_0_30px_rgba(249,115,22,0.8)]' :
-                winTier === WinTier.Big ? 'text-primary-500 drop-shadow-[0_0_20px_rgba(59,130,246,0.7)]' :
-                'text-primary-500'
-              }`}>
+              <h1
+                className={`${PORTRAIT_LAYOUT.typography.hero} font-bold ${
+                  winTier === WinTier.Legendary ? 'text-yellow-400' :
+                  winTier === WinTier.Epic ? 'text-orange-500' :
+                  winTier === WinTier.Big ? 'text-primary-500' :
+                  'text-primary-500'
+                }`}
+                style={{
+                  transform: 'translateZ(0)',
+                  willChange: 'auto',
+                }}
+              >
                 {getWinMessage(spin.total_score)}
               </h1>
             )}
@@ -175,7 +181,7 @@ export function ResultsScreen({ spin }: ResultsScreenProps) {
             transition={{ delay: 0.3, type: 'spring' }}
           >
             <Card>
-              <CardBody className="py-20 bg-gradient-to-br from-gray-800 to-gray-900">
+              <CardBody className={`${PORTRAIT_LAYOUT.padding.cardBody} bg-gradient-to-br from-gray-800 to-gray-900`}>
                 <motion.div
                   animate={winTier !== WinTier.Normal ? {
                     scale: [1, 1.05, 1],
@@ -197,7 +203,7 @@ export function ResultsScreen({ spin }: ResultsScreenProps) {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: 1 }}
-                    className="text-center mt-6 text-4xl text-green-500 font-bold"
+                    className={`text-center mt-4 ${PORTRAIT_LAYOUT.typography.medium} text-green-500 font-bold`}
                   >
                     {spin.bonus_multiplier}x Multiplier Applied!
                   </motion.p>
@@ -208,7 +214,7 @@ export function ResultsScreen({ spin }: ResultsScreenProps) {
 
           {/* Reel Values Breakdown */}
           <Card>
-            <CardBody className="p-12">
+            <CardBody className={PORTRAIT_LAYOUT.padding.cardCompact}>
               <ReelValueDisplay
                 values={{
                   zillow: spin.zillow_value,
@@ -225,7 +231,7 @@ export function ResultsScreen({ spin }: ResultsScreenProps) {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.5 }}
-                  className="mt-8 flex justify-center gap-6"
+                  className="mt-10 flex justify-center gap-8"
                 >
                   {[...Array(spin.banana_count)].map((_, i) => (
                     <motion.span
@@ -237,7 +243,7 @@ export function ResultsScreen({ spin }: ResultsScreenProps) {
                         type: 'spring',
                         stiffness: 200,
                       }}
-                      className="text-8xl"
+                      className="text-[120px]"
                     >
                       🍌
                     </motion.span>
@@ -254,7 +260,7 @@ export function ResultsScreen({ spin }: ResultsScreenProps) {
             transition={{ delay: 2 }}
             className="text-center"
           >
-            <p className="text-3xl text-gray-400">
+            <p className={`${PORTRAIT_LAYOUT.typography.medium} text-gray-400`}>
               Returning to leaderboard...
             </p>
           </motion.div>

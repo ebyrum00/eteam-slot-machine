@@ -28,5 +28,22 @@ module Api
     rescue ActiveRecord::RecordInvalid => e
       render json: { errors: e.record.errors.full_messages }, status: :unprocessable_entity
     end
+
+    def transition_to_results
+      current_state = GameState.current
+      state = GameState.update_state(
+        'results',
+        player_id: current_state.current_player_id,
+        player_name: current_state.current_player_name,
+        spin_id: current_state.current_spin_id
+      )
+
+      render json: {
+        state: state.state,
+        current_player_id: state.current_player_id,
+        current_player_name: state.current_player_name,
+        current_spin_id: state.current_spin_id
+      }
+    end
   end
 end

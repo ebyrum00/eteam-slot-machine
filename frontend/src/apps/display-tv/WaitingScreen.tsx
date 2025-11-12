@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardBody } from '../../components';
-import { TRANSITION_TIMING, SPRING_PRESETS } from '../../config';
+import { TRANSITION_TIMING, SPRING_PRESETS, PORTRAIT_LAYOUT } from '../../config';
 
 interface WaitingScreenProps {
   playerName: string;
@@ -28,7 +28,7 @@ export function WaitingScreen({ playerName }: WaitingScreenProps) {
   }, []);
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-12 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 relative overflow-hidden">
+    <div className={`min-h-screen flex items-center justify-center ${PORTRAIT_LAYOUT.padding.screen} bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 relative overflow-hidden`}>
       {/* Ambient background shimmer */}
       <motion.div
         className="absolute inset-0 bg-gradient-to-br from-transparent via-blue-500/5 to-transparent pointer-events-none"
@@ -58,16 +58,16 @@ export function WaitingScreen({ playerName }: WaitingScreenProps) {
       />
 
       <Card className="w-full max-w-6xl relative z-10">
-        <CardBody className="text-center py-20">
+        <CardBody className={`text-center ${PORTRAIT_LAYOUT.padding.cardBody}`}>
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="space-y-12"
+            className={PORTRAIT_LAYOUT.spacing.section}
           >
             {/* Player name greeting */}
             <div>
               <motion.h2
-                className="text-6xl font-bold text-gray-300 mb-6"
+                className={`${PORTRAIT_LAYOUT.typography.large} font-bold text-gray-300 mb-6`}
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
@@ -76,9 +76,13 @@ export function WaitingScreen({ playerName }: WaitingScreenProps) {
               </motion.h2>
 
               <motion.h1
-                className="text-8xl font-bold text-primary-500 drop-shadow-[0_0_40px_rgba(59,130,246,0.6)]"
+                className={`${PORTRAIT_LAYOUT.typography.hero} font-bold text-primary-500`}
+                style={{
+                  transform: 'translateZ(0)',
+                  willChange: 'opacity',
+                }}
                 animate={{
-                  scale: [1, 1.05, 1],
+                  opacity: [0.95, 1, 0.95],
                 }}
                 transition={{
                   duration: 2,
@@ -98,7 +102,7 @@ export function WaitingScreen({ playerName }: WaitingScreenProps) {
                 transition={SPRING_PRESETS.standard}
               >
                 <motion.p
-                  className="text-9xl font-bold text-yellow-400"
+                  className="text-[240px] font-bold text-yellow-400"
                   animate={{
                     scale: [1, 1.2, 1],
                     opacity: [1, 0.7, 1],
@@ -125,13 +129,13 @@ export function WaitingScreen({ playerName }: WaitingScreenProps) {
                 repeat: Infinity,
                 ease: 'easeInOut',
               }}
-              className="flex justify-center py-12"
+              className="flex justify-center py-8"
             >
               <div className="relative">
-                <div className={`w-64 h-64 bg-gradient-to-br from-red-500 to-red-700 rounded-full shadow-2xl flex items-center justify-center ${
+                <div className={`${PORTRAIT_LAYOUT.components.button.ready} bg-gradient-to-br from-red-500 to-red-700 rounded-full shadow-2xl flex items-center justify-center ${
                   countdown === 0 ? 'shadow-red-500/50' : ''
                 }`}>
-                  <div className="text-white text-5xl font-bold">PRESS</div>
+                  <div className="text-white text-[96px] font-bold">PRESS</div>
                 </div>
                 {/* Pulsing ring effect - more intense when ready */}
                 <motion.div
@@ -150,7 +154,7 @@ export function WaitingScreen({ playerName }: WaitingScreenProps) {
             </motion.div>
 
             <motion.p
-              className="text-gray-400 text-3xl"
+              className={`text-gray-400 ${PORTRAIT_LAYOUT.typography.medium}`}
               animate={{ opacity: [0.5, 1, 0.5] }}
               transition={{ duration: 2, repeat: Infinity }}
             >

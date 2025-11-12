@@ -4,9 +4,42 @@
   body {
     @apply m-0 min-h-screen bg-gray-900 text-white antialiased;
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    overflow: hidden;
   }
 
   * {
     @apply box-border;
+  }
+
+  /* Disable scrollbars globally */
+  html, body {
+    overflow: hidden;
+  }
+
+  /* Hide scrollbars but allow scrolling if needed */
+  * {
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
+  }
+
+  *::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
+  }
+
+  /* GPU acceleration hints for performance */
+  .gpu-accelerated {
+    will-change: transform;
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    perspective: 1000px;
+  }
+
+  /* Optimize text rendering at large sizes */
+  h1, h2, h3, .text-\\[256px\\], .text-\\[240px\\], .text-\\[192px\\], .text-\\[160px\\], .text-\\[128px\\] {
+    will-change: auto;
+    transform: translateZ(0);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
   }
 }

@@ -28,6 +28,14 @@ export function TVDisplay() {
     }
   }, [spin]);
 
+  // Initialize: ensure game state is idle when TV display first loads
+  useEffect(() => {
+    // Only run once on mount to reset state
+    apiClient.updateGameState({ state: 'idle' }).catch(err => {
+      console.error('Failed to reset game state:', err);
+    });
+  }, []);
+
   // Listen to game state changes
   useEffect(() => {
     if (!gameState) return;

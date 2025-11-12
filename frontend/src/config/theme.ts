@@ -82,8 +82,64 @@ export const THEME_CONFIG = {
     card: 'p-12',
     content: 'space-y-8',
   },
+
+  // HD Portrait-optimized layout (1080x1920)
+  // Perfect for Full HD vertical displays
+  portrait: {
+    // Balanced padding for 1080 width
+    padding: {
+      screen: 'p-8',           // Outer screen padding (32px)
+      card: 'p-10',            // Card padding (40px)
+      cardCompact: 'p-8',      // Compact card padding (32px)
+      cardBody: 'py-16',       // Card body vertical padding (64px)
+      cardBodyCompact: 'py-12',// Compact card body (48px)
+    },
+
+    // Well-proportioned spacing
+    spacing: {
+      section: 'space-y-10',   // Section spacing (40px)
+      sectionCompact: 'space-y-8', // Compact sections (32px)
+      content: 'space-y-8',    // Content spacing (32px)
+      contentCompact: 'space-y-6', // Compact content (24px)
+    },
+
+    // Typography scaled for 1920 height
+    typography: {
+      hero: 'text-[128px]',    // 128px - hero text
+      title: 'text-[80px]',    // 80px - main titles
+      subtitle: 'text-3xl',    // 32px - subtitles
+      large: 'text-[64px]',    // 64px - large text
+      medium: 'text-5xl',      // 48px - medium text
+      body: 'text-2xl',        // 24px - body text
+      small: 'text-xl',        // 20px - small text
+    },
+
+    // Component-specific sizes
+    components: {
+      // Reel configuration
+      reels: {
+        gap: 'gap-4',          // Gap between reels (16px)
+        padding: 'p-8',        // Internal reel padding (32px)
+        height: 'h-[480px]',   // Reel viewport height (480px)
+        labelSize: 'text-2xl', // Reel label size (24px)
+      },
+
+      // Leaderboard configuration
+      leaderboard: {
+        rowPadding: 'py-5',    // Row padding (20px)
+        rankSize: 'w-20 h-20', // Rank badge size (80px)
+        maxEntries: 12,        // Good number for 1920 height
+      },
+
+      // Button configuration
+      button: {
+        ready: 'w-[300px] h-[300px]', // Ready button size (300px)
+      },
+    },
+  },
 } as const;
 
 export const BRAND_COLORS = THEME_CONFIG.brands;
 export const TIER_STYLES = THEME_CONFIG.tiers;
 export const PODIUM_STYLES = THEME_CONFIG.podium;
+export const PORTRAIT_LAYOUT = THEME_CONFIG.portrait;

@@ -13,7 +13,7 @@ import {
   generateRandomReelValues,
 } from '../../utils/reelTiers';
 import { audioManager, SOUNDS } from '../../utils/audioManager';
-import { REEL_ANIMATION, BRAND_COLORS } from '../../config';
+import { REEL_ANIMATION, BRAND_COLORS, PORTRAIT_LAYOUT } from '../../config';
 
 interface SpinningAnimationProps {
   spin: Spin;
@@ -36,6 +36,7 @@ export function SpinningAnimation({ spin }: SpinningAnimationProps) {
   const [reelStates, setReelStates] = useState<ReelStateData[]>(
     REEL_NAMES.map(() => ({ state: 'idle', startTime: 0 }))
   );
+  const [allReelsComplete, setAllReelsComplete] = useState(false);
 
   const reelValues = [
     spin.zillow_value,
@@ -45,12 +46,17 @@ export function SpinningAnimation({ spin }: SpinningAnimationProps) {
     spin.smart_sign_value,
   ];
 
-  // Sequential reel start with stagger delay
+  // Sequential reel start - each reel waits for previous to complete + pause
   useEffect(() => {
     const timers: ReturnType<typeof setTimeout>[] = [];
+    const totalReelDuration = REEL_ANIMATION.spinDuration; // 5000ms per reel
+    const pauseBetweenReels = 800; // 800ms pause between reels
 
     REEL_NAMES.forEach((_, index) => {
-      // Start spinning with stagger
+      // Calculate start time: each reel starts after previous completes + pause
+      const startDelay = index * (totalReelDuration + pauseBetweenReels);
+
+      // Start spinning
       const startTimer = setTimeout(() => {
         setReelStates((prev) =>
           prev.map((item, i) =>
@@ -59,16 +65,16 @@ export function SpinningAnimation({ spin }: SpinningAnimationProps) {
               : item
           )
         );
-      }, index * REEL_ANIMATION.staggerDelay);
+      }, startDelay);
 
-      // Start deceleration phase
+      // Start deceleration phase (after acceleration + constant)
       const stopTimer = setTimeout(() => {
         setReelStates((prev) =>
           prev.map((item, i) =>
             i === index ? { ...item, state: 'stopping' } : item
           )
         );
-      }, index * REEL_ANIMATION.staggerDelay + REEL_ANIMATION.phases.acceleration + REEL_ANIMATION.phases.constant);
+      }, startDelay + REEL_ANIMATION.phases.acceleration + REEL_ANIMATION.phases.constant);
 
       // Mark as fully stopped (for pop animation)
       const completeTimer = setTimeout(() => {
@@ -79,7 +85,7 @@ export function SpinningAnimation({ spin }: SpinningAnimationProps) {
         );
         // Play landing sound
         audioManager.play(SOUNDS.REEL_STOP, 0.5);
-      }, index * REEL_ANIMATION.staggerDelay + REEL_ANIMATION.spinDuration);
+      }, startDelay + totalReelDuration);
 
       timers.push(startTimer, stopTimer, completeTimer);
     });
@@ -87,18 +93,39 @@ export function SpinningAnimation({ spin }: SpinningAnimationProps) {
     return () => timers.forEach(clearTimeout);
   }, []);
 
+  // Check if all reels are complete and transition to results
+  useEffect(() => {
+    const allStopped = reelStates.every(reel => reel.state === 'stopped');
+    if (allStopped && !allReelsComplete) {
+      setAllReelsComplete(true);
+      // Wait a moment to show the final state, then trigger results transition
+      setTimeout(() => {
+        // Update game state to results via API
+        fetch('/api/game_state/transition_to_results', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        }).catch(err => console.error('Failed to transition to results:', err));
+      }, 1000); // 1 second delay to appreciate the final stopped state
+    }
+  }, [reelStates, allReelsComplete]);
+
   // Sub-component: Reel with logo cover that slides away
   const IdleReel = memo(({ reelName, brandColor }: { reelName: string; brandColor: string }) => (
     <motion.div
-      className="absolute inset-0 flex items-center justify-center"
-      exit={{ y: -400, opacity: 0 }}
-      transition={{ duration: 0.3, ease: 'easeIn' }}
+      className="absolute inset-0 flex items-center justify-center px-4 bg-gray-800 rounded-lg"
+      exit={{ y: -600, opacity: 0 }}
+      transition={{ duration: 0.5, ease: 'easeOut' }}
+      style={{
+        border: `2px solid ${brandColor}40`,
+      }}
     >
       <div
-        className="text-6xl font-bold"
+        className="text-[72px] font-bold text-center break-words"
         style={{
           color: brandColor,
-          textShadow: `0 0 30px ${brandColor}80`,
+          textShadow: `0 0 40px ${brandColor}80, 0 0 20px ${brandColor}60`,
+          maxWidth: '100%',
+          wordWrap: 'break-word',
         }}
       >
         {reelName}
@@ -115,7 +142,7 @@ export function SpinningAnimation({ spin }: SpinningAnimationProps) {
 
     return (
       <motion.div
-        className="absolute inset-0 flex flex-col items-center gap-8 justify-start pt-16"
+        className="absolute inset-0 flex flex-col items-center gap-16 justify-start pt-32 px-4"
         animate={{ y: [0, REEL_ANIMATION.scrollDistance] }}
         transition={{
           duration: (REEL_ANIMATION.phases.acceleration + REEL_ANIMATION.phases.constant) / 1000,
@@ -126,7 +153,7 @@ export function SpinningAnimation({ spin }: SpinningAnimationProps) {
         {randomValues.map((value, i) => (
           <div
             key={`${index}-${i}`}
-            className="text-5xl font-bold text-gray-400 opacity-60"
+            className="text-[48px] font-bold text-gray-400 opacity-60 whitespace-nowrap"
             style={REEL_STYLES.spinningText}
           >
             {formatReelValue(value)}
@@ -140,8 +167,8 @@ export function SpinningAnimation({ spin }: SpinningAnimationProps) {
   const StoppingReel = memo(({ value }: { value: number }) => {
     return (
       <motion.div
-        className="absolute inset-0 flex items-center justify-center"
-        initial={{ y: -400, opacity: 0.5 }}
+        className="absolute inset-0 flex items-center justify-center px-4"
+        initial={{ y: -500, opacity: 0.5 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{
           duration: REEL_ANIMATION.phases.deceleration / 1000,
@@ -149,7 +176,7 @@ export function SpinningAnimation({ spin }: SpinningAnimationProps) {
         }}
       >
         <div
-          className={`text-6xl font-bold ${getValueTierColor(value)}`}
+          className={`text-[80px] font-bold whitespace-nowrap ${getValueTierColor(value)}`}
           style={REEL_STYLES.stoppingText}
         >
           {formatReelValue(value)}
@@ -176,7 +203,7 @@ export function SpinningAnimation({ spin }: SpinningAnimationProps) {
             times: [...REEL_ANIMATION.popAnimation.times],
             ease: 'easeOut',
           }}
-          className={`text-7xl font-bold ${getValueTierColor(value)} ${getValueTierGlow(value)}`}
+          className={`text-[96px] font-bold whitespace-nowrap ${getValueTierColor(value)} ${getValueTierGlow(value)}`}
         >
           {formatReelValue(value)}
         </motion.div>
@@ -204,7 +231,7 @@ export function SpinningAnimation({ spin }: SpinningAnimationProps) {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-12 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
+    <div className={`min-h-screen flex items-center justify-center ${PORTRAIT_LAYOUT.padding.screen} bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900`}>
       {/* Ambient background shimmer */}
       <motion.div
         className="absolute inset-0 bg-gradient-to-br from-transparent via-blue-500/5 to-transparent pointer-events-none"
@@ -219,22 +246,22 @@ export function SpinningAnimation({ spin }: SpinningAnimationProps) {
         }}
       />
 
-      <div className="w-full max-w-7xl space-y-12 relative z-10">
+      <div className={`w-full max-w-7xl ${PORTRAIT_LAYOUT.spacing.section} relative z-10`}>
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           className="text-center"
         >
-          <h1 className="text-7xl font-bold text-primary-500">
+          <h1 className={`${PORTRAIT_LAYOUT.typography.title} font-bold text-primary-500`}>
             Spinning...
           </h1>
         </motion.div>
 
         {/* Reels */}
         <Card>
-          <CardBody className="p-12">
-            <div className="grid grid-cols-5 gap-8">
+          <CardBody className={PORTRAIT_LAYOUT.padding.card}>
+            <div className={`grid grid-cols-5 ${PORTRAIT_LAYOUT.components.reels.gap}`}>
               {REEL_NAMES.map((name, index) => {
                 const reelState = reelStates[index];
                 const isActive = reelState.state === 'spinning' || reelState.state === 'stopping';
@@ -244,23 +271,26 @@ export function SpinningAnimation({ spin }: SpinningAnimationProps) {
                     key={name}
                     initial={{ opacity: 0, scale: 0.8 }}
                     animate={{
-                      opacity: 1,
+                      opacity: reelState.state === 'idle' ? 0.6 : 1,
                       scale: 1,
                     }}
-                    transition={{ delay: index * 0.1 }}
+                    transition={{
+                      opacity: { duration: 0.3 },
+                      scale: { delay: index * 0.1 }
+                    }}
                     className="relative"
                   >
                     {/* Reel container */}
                     <div className={`
-                      bg-gray-900 rounded-xl p-8 border-4 shadow-2xl overflow-hidden
+                      bg-gray-900 rounded-xl ${PORTRAIT_LAYOUT.components.reels.padding} border-4 shadow-2xl overflow-hidden
                       transition-all duration-300
                       ${isActive ? 'border-primary-500' : 'border-gray-700'}
                       ${reelState.state === 'stopped' ? 'border-yellow-400' : ''}
                     `}>
                       {/* Reel label */}
-                      <div className="text-center mb-6">
+                      <div className="text-center mb-8">
                         <p
-                          className="text-lg font-semibold uppercase tracking-wide"
+                          className={`${PORTRAIT_LAYOUT.components.reels.labelSize} font-bold uppercase tracking-wider`}
                           style={{ color: getBrandColor(index) }}
                         >
                           {name}
@@ -268,10 +298,10 @@ export function SpinningAnimation({ spin }: SpinningAnimationProps) {
                       </div>
 
                       {/* Reel viewport with state-based rendering */}
-                      <div className="h-56 flex items-center justify-center relative overflow-hidden">
-                        {/* Fade masks for depth */}
-                        <div className="absolute top-0 inset-x-0 h-24 bg-gradient-to-b from-gray-900 via-gray-900/50 to-transparent pointer-events-none z-10" />
-                        <div className="absolute bottom-0 inset-x-0 h-24 bg-gradient-to-t from-gray-900 via-gray-900/50 to-transparent pointer-events-none z-10" />
+                      <div className={`${PORTRAIT_LAYOUT.components.reels.height} flex items-center justify-center relative overflow-hidden`}>
+                        {/* Soft white fade masks for depth - stronger effect */}
+                        <div className="absolute top-0 inset-x-0 h-40 bg-gradient-to-b from-gray-900 via-gray-900/80 to-transparent pointer-events-none z-10" />
+                        <div className="absolute bottom-0 inset-x-0 h-40 bg-gradient-to-t from-gray-900 via-gray-900/80 to-transparent pointer-events-none z-10" />
 
                         <AnimatePresence mode="wait">
                           {reelState.state === 'idle' && (

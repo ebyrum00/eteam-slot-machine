@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '../../lib/api/client';
 import { Card, CardBody, Loading } from '../../components';
-import { LEADERBOARD_ANIMATION, PODIUM_STYLES } from '../../config';
+import { LEADERBOARD_ANIMATION, PODIUM_STYLES, PORTRAIT_LAYOUT } from '../../config';
 
 const getPodiumIcon = (rank: number): string | null => {
   if (rank === 1) return '👑';
@@ -38,7 +38,7 @@ export function IdleLeaderboard() {
   const players = leaderboard?.players || [];
 
   return (
-    <div className="min-h-screen p-12 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 relative overflow-hidden">
+    <div className={`min-h-screen ${PORTRAIT_LAYOUT.padding.screen} bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 relative overflow-hidden`}>
       {/* Ambient background shimmer */}
       <motion.div
         className="absolute inset-0 bg-gradient-to-br from-transparent via-blue-500/5 to-transparent pointer-events-none"
@@ -69,19 +69,33 @@ export function IdleLeaderboard() {
         }}
       />
 
-      <div className="max-w-7xl mx-auto space-y-8 relative z-10">
+      <div className={`max-w-7xl mx-auto min-h-screen flex flex-col justify-center ${PORTRAIT_LAYOUT.spacing.content} relative z-10`}>
         {/* Header */}
         <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center space-y-4"
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{
+            opacity: 1,
+            scale: 1,
+          }}
+          className="text-center mb-8"
         >
-          <h1 className="text-7xl font-bold text-primary-500 drop-shadow-[0_0_30px_rgba(59,130,246,0.5)]">
-            Today's Leaderboard
-          </h1>
-          <p className="text-3xl text-gray-400">
-            Top Performers - {leaderboard?.date}
-          </p>
+          <motion.h1
+            className={`${PORTRAIT_LAYOUT.typography.title} font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-yellow-500 to-amber-600`}
+            style={{
+              transform: 'translateZ(0)',
+              willChange: 'opacity',
+            }}
+            animate={{
+              opacity: [0.95, 1, 0.95],
+            }}
+            transition={{
+              duration: 2,
+              repeat: Infinity,
+              ease: 'easeInOut',
+            }}
+          >
+            TODAY'S TOP 10
+          </motion.h1>
         </motion.div>
 
         {/* Leaderboard */}
@@ -92,15 +106,15 @@ export function IdleLeaderboard() {
                 animate={{ opacity: [0.5, 1, 0.5] }}
                 transition={{ duration: 2, repeat: Infinity }}
               >
-                <p className="text-4xl text-gray-400">
+                <p className={`${PORTRAIT_LAYOUT.typography.medium} text-gray-400`}>
                   No spins yet today. Be the first!
                 </p>
               </motion.div>
             </CardBody>
           </Card>
         ) : (
-          <div className="space-y-4">
-            {players.slice(0, 10).map((player, index) => {
+          <div className={PORTRAIT_LAYOUT.spacing.contentCompact}>
+            {players.slice(0, PORTRAIT_LAYOUT.components.leaderboard.maxEntries).map((player, index) => {
               const styles = getPodiumStyles(index);
               const isPodium = index < 3;
 
@@ -117,15 +131,15 @@ export function IdleLeaderboard() {
                   <Card className={`${
                     isPodium ? `border-4 ${index === 0 ? 'border-yellow-400' : index === 1 ? 'border-gray-400' : 'border-orange-500'}` : ''
                   } ${isPodium ? 'bg-gradient-to-r ' + styles.gradient : ''}`}>
-                    <CardBody className="py-8">
+                    <CardBody className={PORTRAIT_LAYOUT.components.leaderboard.rowPadding}>
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-8">
+                        <div className="flex items-center gap-10">
                           {/* Rank */}
                           <div className="relative">
                             {/* Animated floating podium icon */}
                             {getPodiumIcon(player.rank) && (
                               <motion.span
-                                className="absolute -top-10 left-1/2 -translate-x-1/2 text-5xl"
+                                className="absolute -top-12 left-1/2 -translate-x-1/2 text-[64px]"
                                 animate={{ y: [-5, 0, -5] }}
                                 transition={{
                                   duration: LEADERBOARD_ANIMATION.medalBobDuration / 1000,
@@ -140,7 +154,7 @@ export function IdleLeaderboard() {
 
                             {/* Rank badge with gradient */}
                             <div
-                              className={`w-20 h-20 rounded-full flex items-center justify-center text-4xl font-bold ${styles.bg} ${styles.text} shadow-lg`}
+                              className={`${PORTRAIT_LAYOUT.components.leaderboard.rankSize} rounded-full flex items-center justify-center text-4xl font-bold ${styles.bg} ${styles.text} shadow-lg`}
                             >
                               {player.rank}
                             </div>
@@ -148,10 +162,10 @@ export function IdleLeaderboard() {
 
                           {/* Name */}
                           <div>
-                            <h3 className={`text-4xl font-bold ${isPodium ? 'text-white' : 'text-white'}`}>
+                            <h3 className={`${PORTRAIT_LAYOUT.typography.medium} font-bold ${isPodium ? 'text-white' : 'text-white'}`}>
                               {player.name}
                             </h3>
-                            <p className={`text-xl mt-2 ${isPodium ? 'text-gray-200' : 'text-gray-400'}`}>
+                            <p className={`${PORTRAIT_LAYOUT.typography.small} mt-1 ${isPodium ? 'text-gray-200' : 'text-gray-400'}`}>
                               {player.spin_count} spin{player.spin_count !== 1 ? 's' : ''}
                             </p>
                           </div>
@@ -159,7 +173,7 @@ export function IdleLeaderboard() {
 
                         {/* Score */}
                         <div className="text-right">
-                          <p className={`text-5xl font-bold ${
+                          <p className={`${PORTRAIT_LAYOUT.typography.large} font-bold ${
                             index === 0 ? 'text-yellow-400 drop-shadow-[0_0_20px_rgba(251,191,36,0.8)]' :
                             index === 1 ? 'text-gray-300 drop-shadow-[0_0_20px_rgba(209,213,219,0.6)]' :
                             index === 2 ? 'text-orange-400 drop-shadow-[0_0_20px_rgba(251,146,60,0.6)]' :
@@ -181,22 +195,57 @@ export function IdleLeaderboard() {
           </div>
         )}
 
-        {/* Attract message with pulsing glow */}
-        <motion.div
-          animate={{
-            opacity: [0.5, 1, 0.5],
-            scale: [1, 1.02, 1],
-          }}
-          transition={{
-            duration: LEADERBOARD_ANIMATION.attractPulse / 1000,
-            repeat: Infinity
-          }}
-          className="text-center pt-8"
-        >
-          <p className="text-4xl text-gray-300 font-bold drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]">
-            Register on the iPad to play!
-          </p>
-        </motion.div>
+      </div>
+
+      {/* Bottom call-to-action with bouncing arrows */}
+      <div className="absolute bottom-32 left-0 right-0 z-20">
+        <div className="text-center ">
+          {/* Golden text */}
+          <motion.p
+            className={`${PORTRAIT_LAYOUT.typography.large} font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-yellow-400 to-yellow-500`}
+            style={{
+              transform: 'translateZ(0)',
+              willChange: 'opacity',
+            }}
+            animate={{
+              opacity: [0.9, 1, 0.9],
+            }}
+            transition={{
+              duration: 2,
+              repeat: Infinity,
+              ease: 'easeInOut',
+            }}
+          >
+            Spin for your chance to win!
+          </motion.p>
+
+          {/* Three bouncing golden arrows */}
+          <div className="flex justify-center gap-32">
+            {[0, 1, 2].map((index) => (
+              <motion.div
+                key={index}
+                animate={{
+                  y: [0, 25, 0],
+                }}
+                transition={{
+                  duration: 1.5,
+                  repeat: Infinity,
+                  ease: 'easeInOut',
+                  delay: index * 0.2,
+                }}
+                className="text-[120px]"
+                style={{
+                  transform: 'translateZ(0)',
+                  willChange: 'transform',
+                }}
+              >
+                <span className="inline-block text-transparent bg-clip-text bg-gradient-to-b from-yellow-300 via-yellow-400 to-yellow-600">
+                  ⬇
+                </span>
+              </motion.div>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );
