@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { apiClient } from '../../lib/api/client';
 import { useGameStore } from '../../lib/stores/gameStore';
 import { PlayerRegistration } from './PlayerRegistration';
@@ -13,6 +13,7 @@ export function PlayerApp() {
   const [player, setPlayer] = useState<Player | null>(null);
 
   const setCurrentPlayer = useGameStore((state) => state.setCurrentPlayer);
+  const gameState = useGameStore((state) => state.gameState);
 
   // Handle registration completion
   const handleRegistrationComplete = async (newPlayer: Player) => {
@@ -28,15 +29,15 @@ export function PlayerApp() {
     setStep('thank_you');
   };
 
-  // Handle start over
-  const handleStartOver = () => {
-    setStep('registration');
-    setPlayer(null);
-    setCurrentPlayer(null);
-
-    // Reset game state to idle
-    apiClient.updateGameState({ state: 'idle' });
-  };
+  // Listen for game state changes and auto-return to registration when game goes to idle
+  useEffect(() => {
+    if (gameState === 'idle' && step === 'thank_you') {
+      // Game completed, reset to registration
+      setStep('registration');
+      setPlayer(null);
+      setCurrentPlayer(null);
+    }
+  }, [gameState, step, setCurrentPlayer]);
 
   // Render current step
   switch (step) {
@@ -49,10 +50,7 @@ export function PlayerApp() {
     case 'thank_you':
       return player ? (
         <ScreenTransition transitionKey="thank_you">
-          <ThankYouScreen
-            player={player}
-            onStartOver={handleStartOver}
-          />
+          <ThankYouScreen player={player} />
         </ScreenTransition>
       ) : null;
     default:

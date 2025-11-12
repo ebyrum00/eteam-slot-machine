@@ -1,13 +1,12 @@
 import { motion } from 'framer-motion';
-import { Card, CardBody, Button } from '../../components';
+import { Card, CardBody } from '../../components';
 import type { Player } from '../../types/api';
 
 interface ThankYouScreenProps {
   player: Player;
-  onStartOver: () => void;
 }
 
-export function ThankYouScreen({ player, onStartOver }: ThankYouScreenProps) {
+export function ThankYouScreen({ player }: ThankYouScreenProps) {
   return (
     <div className="min-h-screen flex items-center justify-center p-8 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
       <motion.div
@@ -37,15 +36,6 @@ export function ThankYouScreen({ player, onStartOver }: ThankYouScreenProps) {
             <p className="text-gray-400 text-lg">
               Watch the TV screen for your results
             </p>
-
-            <Button
-              variant="secondary"
-              size="lg"
-              fullWidth
-              onClick={onStartOver}
-            >
-              Register Another Player
-            </Button>
           </CardBody>
         </Card>
       </motion.div>
