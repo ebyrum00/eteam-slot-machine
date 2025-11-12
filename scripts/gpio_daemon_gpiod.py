@@ -296,6 +296,12 @@ class WebSocketClient:
         logger.warning("WebSocket closed: %s - %s", close_status_code, close_msg)
         self.controller.ws_connected = False
 
+        # Retry connection after 5 seconds
+        if self.running:
+            logger.info("Will retry WebSocket connection in 5 seconds...")
+            time.sleep(5)
+            self.connect()
+
     def on_open(self, ws):
         """Handle WebSocket open"""
         logger.info("WebSocket connected")
