@@ -136,16 +136,19 @@ export function IdleLeaderboard() {
                         <div className="flex items-center gap-10">
                           {/* Rank */}
                           <div className="relative">
-                            {/* Animated floating podium icon */}
-                            {getPodiumIcon(player.rank) && (
+                            {/* For top 3: show ONLY the emoji, no badge */}
+                            {isPodium ? (
                               <motion.span
-                                className="absolute -top-12 left-1/2 -translate-x-1/2 text-[64px]"
+                                className="text-[80px]"
                                 style={{
                                   fontFamily: "'Noto Color Emoji', sans-serif"
                                 }}
-                                animate={{ y: [-5, 0, -5] }}
+                                animate={{
+                                  scale: [1, 1.1, 1],
+                                  rotate: [-5, 5, -5]
+                                }}
                                 transition={{
-                                  duration: LEADERBOARD_ANIMATION.medalBobDuration / 1000,
+                                  duration: 2,
                                   repeat: Infinity,
                                   ease: 'easeInOut',
                                   delay: index * 0.2,
@@ -153,14 +156,14 @@ export function IdleLeaderboard() {
                               >
                                 {getPodiumIcon(player.rank)}
                               </motion.span>
+                            ) : (
+                              /* For rank 4+: show number badge */
+                              <div
+                                className={`${PORTRAIT_LAYOUT.components.leaderboard.rankSize} rounded-full flex items-center justify-center text-4xl font-bold ${styles.bg} ${styles.text} shadow-lg`}
+                              >
+                                {player.rank}
+                              </div>
                             )}
-
-                            {/* Rank badge with gradient */}
-                            <div
-                              className={`${PORTRAIT_LAYOUT.components.leaderboard.rankSize} rounded-full flex items-center justify-center text-4xl font-bold ${styles.bg} ${styles.text} shadow-lg`}
-                            >
-                              {player.rank}
-                            </div>
                           </div>
 
                           {/* Name */}
@@ -201,7 +204,7 @@ export function IdleLeaderboard() {
       </div>
 
       {/* Bottom call-to-action with bouncing arrows */}
-      <div className="absolute bottom-32 left-0 right-0 z-20">
+      <div className="absolute bottom-15 left-0 right-0 z-20">
         <div className="text-center ">
           {/* Golden text */}
           <motion.p
