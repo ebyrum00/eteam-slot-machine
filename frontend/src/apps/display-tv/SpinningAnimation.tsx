@@ -13,6 +13,7 @@ import {
   generateRandomReelValues,
 } from '../../utils/reelTiers';
 import { audioManager, SOUNDS } from '../../utils/audioManager';
+import { apiClient } from '../../lib/api/client';
 import { REEL_ANIMATION, BRAND_COLORS, PORTRAIT_LAYOUT } from '../../config';
 
 interface SpinningAnimationProps {
@@ -101,10 +102,9 @@ export function SpinningAnimation({ spin }: SpinningAnimationProps) {
       // Wait a moment to show the final state, then trigger results transition
       setTimeout(() => {
         // Update game state to results via API
-        fetch('/api/game_state/transition_to_results', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' }
-        }).catch(err => console.error('Failed to transition to results:', err));
+        apiClient.transitionToResults().catch(err =>
+          console.error('Failed to transition to results:', err)
+        );
       }, 1000); // 1 second delay to appreciate the final stopped state
     }
   }, [reelStates, allReelsComplete]);

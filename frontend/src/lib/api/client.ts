@@ -71,6 +71,12 @@ class APIClient {
     });
   }
 
+  async transitionToResults(): Promise<GameState> {
+    return this.request<GameState>('/api/game_state/transition_to_results', {
+      method: 'POST',
+    });
+  }
+
   // Spins
   async createSpin(playerId: number): Promise<Spin> {
     return this.request<Spin>('/api/spins', {
