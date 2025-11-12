@@ -59,12 +59,15 @@ Rails.application.configure do
   # Annotate rendered view with file names.
   config.action_view.annotate_rendered_view_with_filenames = true
 
-  # Configure ActionCable for local network access
   config.action_cable.allowed_request_origins = [
     'http://localhost:3000',
     'http://localhost:5173',  # Vite dev server
+    'ws://localhost:3000',
+    'ws://localhost:5173',
     /http:\/\/192\.168\.\d+\.\d+:3000/,
-    /http:\/\/192\.168\.\d+\.\d+:5173/  # Network access to Vite
+    /http:\/\/192\.168\.\d+\.\d+:5173/,  # Network access to Vite
+    /ws:\/\/192\.168\.\d+\.\d+:3000/,    # WebSocket from Pi
+    /ws:\/\/192\.168\.\d+\.\d+:5173/     # WebSocket from Pi to Vite
   ]
 
   # Raise error when a before_action's only/except options reference missing actions.
