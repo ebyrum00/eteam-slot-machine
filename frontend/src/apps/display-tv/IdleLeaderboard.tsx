@@ -139,17 +139,17 @@ export function IdleLeaderboard() {
                             {/* For top 3: show ONLY the emoji, no badge */}
                             {isPodium ? (
                               <motion.span
-                                className="text-[80px]"
+                                className="text-[80px] inline-block"
                                 style={{
                                   fontFamily: "'Noto Color Emoji', sans-serif",
                                   filter: 'drop-shadow(0 4px 12px rgba(0, 0, 0, 0.5))'
                                 }}
                                 animate={{
-                                  y: [-8, 0, -8],
-                                  scale: [1, 1.05, 1]
+                                  y: [-10, 0, -10],
+                                  scale: [1, 1.08, 1]
                                 }}
                                 transition={{
-                                  duration: 2.5,
+                                  duration: 2,
                                   repeat: Infinity,
                                   ease: 'easeInOut',
                                   delay: index * 0.3,
