@@ -15,6 +15,12 @@ export function PlayerRegistration({ onComplete }: PlayerRegistrationProps) {
   const [phone, setPhone] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  // Check if form is valid (all fields filled with valid data)
+  const isFormValid = name.trim() !== '' &&
+                      email.trim() !== '' &&
+                      /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) &&
+                      phone.trim() !== '';
+
   const createPlayerMutation = useMutation({
     mutationFn: apiClient.createPlayer.bind(apiClient),
     onSuccess: (player: Player) => {
@@ -121,15 +127,46 @@ export function PlayerRegistration({ onComplete }: PlayerRegistrationProps) {
           </CardBody>
 
           <CardFooter>
-            <Button
-              variant="primary"
-              size="lg"
-              fullWidth
-              loading={createPlayerMutation.isPending}
-              onClick={handleSubmit}
+            <motion.div
+              animate={isFormValid ? {
+                boxShadow: [
+                  '0 0 20px rgba(59, 130, 246, 0.5)',
+                  '0 0 40px rgba(59, 130, 246, 0.8)',
+                  '0 0 20px rgba(59, 130, 246, 0.5)',
+                ]
+              } : {}}
+              transition={{
+                duration: 2,
+                repeat: Infinity,
+                ease: 'easeInOut',
+              }}
+              className="rounded-lg"
             >
-              Let's Play!
-            </Button>
+              <Button
+                variant="primary"
+                size="lg"
+                color="grey"
+                fullWidth
+                loading={createPlayerMutation.isPending}
+                onClick={handleSubmit}
+                className={isFormValid ? 'relative overflow-hidden' : ''}
+              >
+                {isFormValid && (
+                  <motion.div
+                    className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
+                    animate={{
+                      x: ['-200%', '200%'],
+                    }}
+                    transition={{
+                      duration: 1.5,
+                      repeat: Infinity,
+                      ease: 'linear',
+                    }}
+                  />
+                )}
+                <span className="relative z-10">Let's Play!</span>
+              </Button>
+            </motion.div>
           </CardFooter>
         </Card>
       </motion.div>
