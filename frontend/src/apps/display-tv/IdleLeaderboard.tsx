@@ -141,17 +141,18 @@ export function IdleLeaderboard() {
                               <motion.span
                                 className="text-[80px]"
                                 style={{
-                                  fontFamily: "'Noto Color Emoji', sans-serif"
+                                  fontFamily: "'Noto Color Emoji', sans-serif",
+                                  filter: 'drop-shadow(0 4px 12px rgba(0, 0, 0, 0.5))'
                                 }}
                                 animate={{
-                                  scale: [1, 1.1, 1],
-                                  rotate: [-5, 5, -5]
+                                  y: [-8, 0, -8],
+                                  scale: [1, 1.05, 1]
                                 }}
                                 transition={{
-                                  duration: 2,
+                                  duration: 2.5,
                                   repeat: Infinity,
                                   ease: 'easeInOut',
-                                  delay: index * 0.2,
+                                  delay: index * 0.3,
                                 }}
                               >
                                 {getPodiumIcon(player.rank)}
