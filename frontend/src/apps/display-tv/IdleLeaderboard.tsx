@@ -7,9 +7,9 @@ import { Card, CardBody, Loading } from '../../components';
 import { LEADERBOARD_ANIMATION, PODIUM_STYLES, PORTRAIT_LAYOUT } from '../../config';
 
 const getPodiumIcon = (rank: number): string | null => {
-  if (rank === 1) return '👑';
-  if (rank === 2) return '🥈';
-  if (rank === 3) return '🥉';
+  if (rank === 1) return '★';
+  if (rank === 2) return '★';
+  if (rank === 3) return '★';
   return null;
 };
 
@@ -139,7 +139,16 @@ export function IdleLeaderboard() {
                             {/* Animated floating podium icon */}
                             {getPodiumIcon(player.rank) && (
                               <motion.span
-                                className="absolute -top-12 left-1/2 -translate-x-1/2 text-[64px]"
+                                className={`absolute -top-12 left-1/2 -translate-x-1/2 text-[64px] font-bold ${
+                                  index === 0 ? 'text-yellow-400' :
+                                  index === 1 ? 'text-gray-300' :
+                                  'text-orange-500'
+                                }`}
+                                style={{
+                                  textShadow: index === 0 ? '0 0 20px rgba(251,191,36,0.8)' :
+                                              index === 1 ? '0 0 20px rgba(209,213,219,0.6)' :
+                                              '0 0 20px rgba(249,115,22,0.6)'
+                                }}
                                 animate={{ y: [-5, 0, -5] }}
                                 transition={{
                                   duration: LEADERBOARD_ANIMATION.medalBobDuration / 1000,
