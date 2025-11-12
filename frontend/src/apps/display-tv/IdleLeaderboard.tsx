@@ -69,7 +69,7 @@ export function IdleLeaderboard() {
         }}
       />
 
-      <div className={`max-w-7xl mx-auto min-h-screen flex flex-col justify-center ${PORTRAIT_LAYOUT.spacing.content} relative z-10`}>
+      <div className={`max-w-7xl mx-auto min-h-screen flex flex-col pt-16 pb-96 ${PORTRAIT_LAYOUT.spacing.content} relative z-10`}>
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, scale: 0.8 }}
@@ -77,7 +77,7 @@ export function IdleLeaderboard() {
             opacity: 1,
             scale: 1,
           }}
-          className="text-center mb-8"
+          className="text-center mb-12"
         >
           <motion.h1
             className={`${PORTRAIT_LAYOUT.typography.title} font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-yellow-500 to-amber-600`}
