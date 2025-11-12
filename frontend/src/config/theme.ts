@@ -100,7 +100,7 @@ export const THEME_CONFIG = {
       section: 'space-y-10',   // Section spacing (40px)
       sectionCompact: 'space-y-8', // Compact sections (32px)
       content: 'space-y-8',    // Content spacing (32px)
-      contentCompact: 'space-y-6', // Compact content (24px)
+      contentCompact: 'space-y-4', // Compact content (16px) - reduced for leaderboard
     },
 
     // Typography scaled for 1920 height
@@ -126,7 +126,7 @@ export const THEME_CONFIG = {
 
       // Leaderboard configuration
       leaderboard: {
-        rowPadding: 'py-5',    // Row padding (20px)
+        rowPadding: 'py-3',    // Row padding (12px) - reduced for more compact layout
         rankSize: 'w-20 h-20', // Rank badge size (80px)
         maxEntries: 12,        // Good number for 1920 height
       },

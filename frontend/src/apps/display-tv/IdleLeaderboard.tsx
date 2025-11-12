@@ -69,7 +69,7 @@ export function IdleLeaderboard() {
         }}
       />
 
-      <div className={`max-w-7xl mx-auto min-h-screen flex flex-col pt-16 pb-96 ${PORTRAIT_LAYOUT.spacing.content} relative z-10`}>
+      <div className={`max-w-7xl mx-auto min-h-screen flex flex-col pt-16 pb-72 ${PORTRAIT_LAYOUT.spacing.content} relative z-10`}>
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, scale: 0.8 }}
