@@ -5,7 +5,7 @@ class Player < ApplicationRecord
   validates :email, presence: true, format: { with: URI::MailTo::EMAIL_REGEXP }
   validates :phone, presence: true
 
-  # Daily leaderboard calculation - groups by email to combine duplicate players
+  # Daily leaderboard calculation - groups by email, ranks by best single spin
   def self.daily_leaderboard(date = Date.today)
     joins(:spins)
       .where(spins: { created_at: date.beginning_of_day..date.end_of_day })
@@ -14,7 +14,7 @@ class Player < ApplicationRecord
         'MAX(players.id) as id',
         'MAX(players.name) as name',
         'players.email',
-        'SUM(spins.total_score) as total_score',
+        'MAX(spins.total_score) as total_score',
         'COUNT(spins.id) as spin_count',
         'MAX(spins.total_score) as best_score',
         'MAX(spins.id) as best_spin_id'
