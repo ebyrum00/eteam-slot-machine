@@ -3,7 +3,7 @@
 @layer base {
   body {
     @apply m-0 min-h-screen bg-gray-900 text-white antialiased;
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif, 'Noto Color Emoji';
     overflow: hidden;
   }
 
