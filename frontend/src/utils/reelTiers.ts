@@ -26,6 +26,23 @@ export const getValueTierGlow = (value: number): string => {
   return TIER_STYLES.cool.glow;
 };
 
+export const getValueTierBg = (value: number): string => {
+  if (value === 3_000_000) return TIER_STYLES.legendary.bg;
+  if (value >= 2_000_000) return TIER_STYLES.gold.bg;
+  if (value >= 1_000_000) return TIER_STYLES.hot.bg;
+  if (value >= 500_000) return TIER_STYLES.medium.bg;
+  return TIER_STYLES.cool.bg;
+};
+
+// Get background with opacity for spinning values
+export const getValueTierBgWithOpacity = (value: number, opacity: number = 0.2): string => {
+  if (value === 3_000_000) return `rgba(251, 191, 36, ${opacity})`; // yellow-400
+  if (value >= 2_000_000) return `rgba(245, 158, 11, ${opacity})`; // yellow-500
+  if (value >= 1_000_000) return `rgba(249, 115, 22, ${opacity})`; // orange-500
+  if (value >= 500_000) return `rgba(168, 85, 247, ${opacity})`; // purple-500
+  return `rgba(96, 165, 250, ${opacity})`; // blue-400
+};
+
 export const generateRandomReelValues = (count: number): number[] => {
   const possibleValues = [
     200_000,

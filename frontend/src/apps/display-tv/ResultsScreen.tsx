@@ -15,6 +15,7 @@ import {
 import { audioManager, SOUNDS } from '../../utils/audioManager';
 import { RESULTS_ANIMATION, PORTRAIT_LAYOUT } from '../../config';
 import { useGameStore } from '../../lib/stores/gameStore';
+import { apiClient } from '../../lib/api/client';
 
 interface ResultsScreenProps {
   spin: Spin;
@@ -80,6 +81,17 @@ export function ResultsScreen({ spin }: ResultsScreenProps) {
       return () => clearTimeout(timer);
     }
   }, [showBigWinEffects]);
+
+  // Auto-transition to idle after 6 seconds
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      apiClient.updateGameState({ state: 'idle' }).catch((err) =>
+        console.error('Failed to transition to idle:', err)
+      );
+    }, 6000);
+
+    return () => clearTimeout(timer);
+  }, []);
 
   const confettiCount = getConfettiCount(winTier);
   const shakeIntensity = getShakeIntensity(winTier);

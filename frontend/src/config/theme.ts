@@ -7,11 +7,11 @@
 export const THEME_CONFIG = {
   // Brand colors per reel
   brands: {
-    zillow: '#006AFF',
-    realtor: '#C62828',
-    homes: '#F57C00',
-    google: '#34A853',
-    smartSign: '#673AB7',
+    zillow: '#1277e1',
+    realtor: '#e61a39',
+    homes: '#ff6c2c',
+    google: '#34a853',
+    smartSign: '#552448',
   },
 
   // Value tier colors (for heat map)
@@ -97,9 +97,9 @@ export const THEME_CONFIG = {
 
     // Well-proportioned spacing
     spacing: {
-      section: 'space-y-10',   // Section spacing (40px)
-      sectionCompact: 'space-y-8', // Compact sections (32px)
-      content: 'space-y-8',    // Content spacing (32px)
+      section: 'space-y-6',    // Section spacing (24px) - reduced for tighter layout
+      sectionCompact: 'space-y-4', // Compact sections (16px)
+      content: 'space-y-4',    // Content spacing (16px) - reduced
       contentCompact: 'space-y-4', // Compact content (16px) - reduced for leaderboard
     },
 
@@ -118,10 +118,10 @@ export const THEME_CONFIG = {
     components: {
       // Reel configuration
       reels: {
-        gap: 'gap-4',          // Gap between reels (16px)
-        padding: 'p-8',        // Internal reel padding (32px)
-        height: 'h-[480px]',   // Reel viewport height (480px)
-        labelSize: 'text-2xl', // Reel label size (24px)
+        gap: 'gap-2',          // Gap between reels (8px) - tighter spacing
+        padding: 'p-6',        // Internal reel padding (24px) - reduced
+        height: 'h-[720px]',   // Reel viewport height (720px) - 50% taller
+        labelSize: 'text-xl',  // Reel label size (20px) - slightly smaller
       },
 
       // Leaderboard configuration

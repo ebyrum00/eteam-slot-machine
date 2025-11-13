@@ -31,8 +31,9 @@ export function PlayerApp() {
 
   // Listen for game state changes and auto-return to registration when game goes to idle
   useEffect(() => {
-    if (gameState === 'idle' && step === 'thank_you') {
+    if (gameState?.state === 'idle' && step === 'thank_you') {
       // Game completed, reset to registration
+      console.log('Game returned to idle - resetting iPad to registration form');
       setStep('registration');
       setPlayer(null);
       setCurrentPlayer(null);

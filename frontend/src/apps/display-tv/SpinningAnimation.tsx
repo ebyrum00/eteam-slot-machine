@@ -1,14 +1,14 @@
 // frontend/src/apps/display-tv/SpinningAnimation.tsx
 
-import { useState, useEffect, useMemo, memo } from 'react';
+import { useState, useEffect, useRef, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardBody } from '../../components';
 import type { Spin } from '../../types/api';
 import {
   REEL_NAMES,
   getValueTierColor,
-  getValueTierBorder,
   getValueTierGlow,
+  getValueTierBgWithOpacity,
   formatReelValue,
   generateRandomReelValues,
 } from '../../utils/reelTiers';
@@ -68,16 +68,7 @@ export function SpinningAnimation({ spin }: SpinningAnimationProps) {
         );
       }, startDelay);
 
-      // Start deceleration phase (after acceleration + constant)
-      const stopTimer = setTimeout(() => {
-        setReelStates((prev) =>
-          prev.map((item, i) =>
-            i === index ? { ...item, state: 'stopping' } : item
-          )
-        );
-      }, startDelay + REEL_ANIMATION.phases.acceleration + REEL_ANIMATION.phases.constant);
-
-      // Mark as fully stopped (for pop animation)
+      // Mark as fully stopped (for pop animation) - happens when animation completes
       const completeTimer = setTimeout(() => {
         setReelStates((prev) =>
           prev.map((item, i) =>
@@ -88,7 +79,7 @@ export function SpinningAnimation({ spin }: SpinningAnimationProps) {
         audioManager.play(SOUNDS.REEL_STOP, 0.5);
       }, startDelay + totalReelDuration);
 
-      timers.push(startTimer, stopTimer, completeTimer);
+      timers.push(startTimer, completeTimer);
     });
 
     return () => timers.forEach(clearTimeout);
@@ -112,20 +103,19 @@ export function SpinningAnimation({ spin }: SpinningAnimationProps) {
   // Sub-component: Reel with logo cover that slides away
   const IdleReel = memo(({ reelName, brandColor }: { reelName: string; brandColor: string }) => (
     <motion.div
-      className="absolute inset-0 flex items-center justify-center px-4 bg-gray-800 rounded-lg"
+      className="absolute inset-0 flex items-center justify-center px-4 rounded-lg"
       exit={{ y: -600, opacity: 0 }}
       transition={{ duration: 0.5, ease: 'easeOut' }}
       style={{
-        border: `2px solid ${brandColor}40`,
+        backgroundColor: brandColor,
       }}
     >
       <div
-        className="text-[72px] font-bold text-center break-words"
+        className="text-[48px] font-bold text-center break-words text-white"
         style={{
-          color: brandColor,
-          textShadow: `0 0 40px ${brandColor}80, 0 0 20px ${brandColor}60`,
           maxWidth: '100%',
           wordWrap: 'break-word',
+          textShadow: '0 4px 8px rgba(0, 0, 0, 0.3)',
         }}
       >
         {reelName}
@@ -133,93 +123,74 @@ export function SpinningAnimation({ spin }: SpinningAnimationProps) {
     </motion.div>
   ));
 
-  // Sub-component: Spinning reel (infinite scroll with acceleration)
-  const SpinningReel = memo(({ index }: { index: number }) => {
-    const randomValues = useMemo(
-      () => generateRandomReelValues(REEL_ANIMATION.valuesPerCycle),
-      [index]
-    );
+  // Sub-component: Spinning reel (scrolls through random values and lands on final value)
+  const SpinningReel = memo(({ index, finalValue, isStopped }: { index: number; finalValue: number; isStopped: boolean }) => {
+    // Generate values once and store in ref to prevent regeneration
+    const valuesRef = useRef<{ values: number[]; centerIndex: number } | null>(null);
+
+    if (valuesRef.current === null) {
+      console.log(`Reel ${index} INITIALIZING with finalValue:`, finalValue);
+
+      // Generate random values for the spinning effect
+      const randomValues = generateRandomReelValues(REEL_ANIMATION.valuesPerCycle);
+
+      // Place the final value at the LAST position
+      const finalValueIndex = randomValues.length - 1;
+      randomValues[finalValueIndex] = finalValue;
+
+      valuesRef.current = { values: randomValues, centerIndex: finalValueIndex };
+    }
+
+    const { values, centerIndex } = valuesRef.current;
+
+    // Calculate scroll distance
+    const itemHeight = 96;
+    const gapBetween = 64;
+    const totalItemHeight = itemHeight + gapBetween;
+    const viewportHeight = 720;
+    const viewportCenter = viewportHeight / 2;
+    const lastItemCenterPosition = (centerIndex * totalItemHeight) + (itemHeight / 2);
+    const scrollDistance = viewportCenter - lastItemCenterPosition;
 
     return (
       <motion.div
-        className="absolute inset-0 flex flex-col items-center gap-16 justify-start pt-32 px-4"
-        animate={{ y: [0, REEL_ANIMATION.scrollDistance] }}
+        className="absolute inset-0 flex flex-col items-center gap-16 justify-start"
+        initial={{ y: 0 }}
+        animate={{ y: scrollDistance }}
         transition={{
-          duration: (REEL_ANIMATION.phases.acceleration + REEL_ANIMATION.phases.constant) / 1000,
-          ease: 'linear',
-          repeat: Infinity,
+          duration: REEL_ANIMATION.spinDuration / 1000,
+          ease: [0.33, 1, 0.68, 1],
         }}
       >
-        {randomValues.map((value, i) => (
-          <div
-            key={`${index}-${i}`}
-            className="text-[48px] font-bold text-gray-400 opacity-60 whitespace-nowrap"
-            style={REEL_STYLES.spinningText}
-          >
-            {formatReelValue(value)}
-          </div>
-        ))}
-      </motion.div>
-    );
-  });
+        {values.map((value, i) => {
+          // Highlight the final value when stopped
+          const isCentered = isStopped && (i === centerIndex);
 
-  // Sub-component: Stopping reel (deceleration to final value)
-  const StoppingReel = memo(({ value }: { value: number }) => {
-    return (
-      <motion.div
-        className="absolute inset-0 flex items-center justify-center px-4"
-        initial={{ y: -500, opacity: 0.5 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{
-          duration: REEL_ANIMATION.phases.deceleration / 1000,
-          ease: REEL_ANIMATION.easing.deceleration,
-        }}
-      >
-        <div
-          className={`text-[80px] font-bold whitespace-nowrap ${getValueTierColor(value)}`}
-          style={REEL_STYLES.stoppingText}
-        >
-          {formatReelValue(value)}
-        </div>
-      </motion.div>
-    );
-  });
-
-  // Sub-component: Stopped reel (pop animation with glow)
-  const StoppedReel = memo(({ value }: { value: number }) => {
-    return (
-      <motion.div className="absolute inset-0 flex items-center justify-center">
-        {/* Value with pop animation */}
-        <motion.div
-          initial={{ scale: REEL_ANIMATION.popAnimation.scaleKeyframes[0] }}
-          animate={{
-            scale: [...REEL_ANIMATION.popAnimation.scaleKeyframes],
-            filter: REEL_ANIMATION.popAnimation.brightnessKeyframes.map(
-              (b) => `brightness(${b})`
-            ),
-          }}
-          transition={{
-            duration: REEL_ANIMATION.popAnimation.duration / 1000,
-            times: [...REEL_ANIMATION.popAnimation.times],
-            ease: 'easeOut',
-          }}
-          className={`text-[96px] font-bold whitespace-nowrap ${getValueTierColor(value)} ${getValueTierGlow(value)}`}
-        >
-          {formatReelValue(value)}
-        </motion.div>
-
-        {/* Glow pulse ring */}
-        <motion.div
-          className={`absolute inset-0 rounded-lg border-4 ${getValueTierBorder(value)}`}
-          animate={{
-            scale: [...REEL_ANIMATION.glowPulse.scaleKeyframes],
-            opacity: [...REEL_ANIMATION.glowPulse.opacityKeyframes],
-          }}
-          transition={{
-            duration: REEL_ANIMATION.glowPulse.duration / 1000,
-            ease: 'easeOut'
-          }}
-        />
+          return (
+            <div
+              key={`${index}-${i}`}
+              className={`rounded-lg transition-all duration-100 ${isCentered ? 'py-6 px-8' : 'py-4 px-6'}`}
+              style={{
+                backgroundColor: isCentered
+                  ? getValueTierBgWithOpacity(value, 0.5)
+                  : getValueTierBgWithOpacity(value, 0.15),
+                border: isCentered ? `3px solid ${getValueTierBgWithOpacity(value, 0.9)}` : 'none',
+                boxShadow: isCentered ? `0 0 30px ${getValueTierBgWithOpacity(value, 0.6)}` : 'none',
+              }}
+            >
+              <div
+                className={`font-bold whitespace-nowrap transition-all duration-100 ${
+                  isCentered
+                    ? `text-[64px] ${getValueTierColor(value)} ${getValueTierGlow(value)}`
+                    : 'text-[32px] text-gray-300 opacity-70'
+                }`}
+                style={isCentered ? {} : REEL_STYLES.spinningText}
+              >
+                {formatReelValue(value)}
+              </div>
+            </div>
+          );
+        })}
       </motion.div>
     );
   });
@@ -281,14 +252,9 @@ export function SpinningAnimation({ spin }: SpinningAnimationProps) {
                     className="relative"
                   >
                     {/* Reel container */}
-                    <div className={`
-                      bg-gray-900 rounded-xl ${PORTRAIT_LAYOUT.components.reels.padding} border-4 shadow-2xl overflow-hidden
-                      transition-all duration-300
-                      ${isActive ? 'border-primary-500' : 'border-gray-700'}
-                      ${reelState.state === 'stopped' ? 'border-yellow-400' : ''}
-                    `}>
-                      {/* Reel label */}
-                      <div className="text-center mb-8">
+                    <div className="flex flex-col">
+                      {/* Reel label - outside the scrolling container */}
+                      <div className="text-center mb-2 px-2">
                         <p
                           className={`${PORTRAIT_LAYOUT.components.reels.labelSize} font-bold uppercase tracking-wider`}
                           style={{ color: getBrandColor(index) }}
@@ -297,36 +263,36 @@ export function SpinningAnimation({ spin }: SpinningAnimationProps) {
                         </p>
                       </div>
 
-                      {/* Reel viewport with state-based rendering */}
-                      <div className={`${PORTRAIT_LAYOUT.components.reels.height} flex items-center justify-center relative overflow-hidden`}>
+                      {/* Reel viewport with state-based rendering - no padding */}
+                      <div className={`
+                        ${PORTRAIT_LAYOUT.components.reels.height}
+                        bg-gray-900 rounded-xl border-4 shadow-2xl overflow-hidden
+                        flex items-center justify-center relative
+                        transition-all duration-300
+                        ${isActive ? 'border-primary-500' : 'border-gray-700'}
+                        ${reelState.state === 'stopped' ? 'border-yellow-400' : ''}
+                      `}>
                         {/* Soft white fade masks for depth - stronger effect */}
                         <div className="absolute top-0 inset-x-0 h-40 bg-gradient-to-b from-gray-900 via-gray-900/80 to-transparent pointer-events-none z-10" />
                         <div className="absolute bottom-0 inset-x-0 h-40 bg-gradient-to-t from-gray-900 via-gray-900/80 to-transparent pointer-events-none z-10" />
 
-                        <AnimatePresence mode="wait">
-                          {reelState.state === 'idle' && (
+                        {reelState.state === 'idle' && (
+                          <AnimatePresence>
                             <IdleReel
                               key="idle"
                               reelName={name}
                               brandColor={getBrandColor(index)}
                             />
-                          )}
-                          {reelState.state === 'spinning' && (
-                            <SpinningReel key="spinning" index={index} />
-                          )}
-                          {reelState.state === 'stopping' && (
-                            <StoppingReel
-                              key="stopping"
-                              value={reelValues[index]}
-                            />
-                          )}
-                          {reelState.state === 'stopped' && (
-                            <StoppedReel
-                              key="stopped"
-                              value={reelValues[index]}
-                            />
-                          )}
-                        </AnimatePresence>
+                          </AnimatePresence>
+                        )}
+                        {(reelState.state === 'spinning' || reelState.state === 'stopped') && (
+                          <SpinningReel
+                            key={`spin-${spin.id}-${index}`}
+                            index={index}
+                            finalValue={reelValues[index]}
+                            isStopped={reelState.state === 'stopped'}
+                          />
+                        )}
                       </div>
                     </div>
 
