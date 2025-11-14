@@ -33,6 +33,198 @@ const REEL_STYLES = {
   stoppingText: { textShadow: '0 0 30px rgba(239, 68, 68, 0.6)' },
 } as const;
 
+// Sub-component: Reel with brand logo/name cover that slides away
+const IdleReel = memo(({ reelName, brandColor }: { reelName: string; brandColor: string }) => {
+  // Brand name formatting (simpler, cleaner display)
+  const getBrandDisplay = (name: string) => {
+    const brandMap: { [key: string]: string } = {
+      'Zillow': 'ZILLOW',
+      'Realtor': 'REALTOR',
+      'Homes.com': 'HOMES.COM',
+      'Google': 'GOOGLE',
+      'Smart Sign': 'SMART SIGN',
+    };
+    return brandMap[name] || name.toUpperCase();
+  };
+
+  return (
+    <motion.div
+      className="absolute inset-0 flex items-center justify-center px-4 rounded-lg"
+      initial={{ y: 0, opacity: 1 }}
+      animate={{ y: 0, opacity: 1 }}
+      exit={{ y: -600, opacity: 0 }}
+      transition={{ duration: 0.5, ease: 'easeOut' }}
+      style={{
+        backgroundColor: brandColor,
+      }}
+    >
+      <div
+        className="text-[56px] font-black text-center tracking-wider text-white"
+        style={{
+          maxWidth: '100%',
+          wordWrap: 'break-word',
+          textShadow: '0 6px 12px rgba(0, 0, 0, 0.4), 0 2px 4px rgba(0, 0, 0, 0.3)',
+          letterSpacing: '0.05em',
+        }}
+      >
+        {getBrandDisplay(reelName)}
+      </div>
+    </motion.div>
+  );
+});
+
+// Sub-component: Spinning reel (scrolls through random values and lands on final value)
+const SpinningReel = ({ index, finalValue, isStopped }: { index: number; finalValue: number; isStopped: boolean }) => {
+  // Generate values once and store in ref to prevent regeneration
+  const valuesRef = useRef<{ values: number[]; centerIndex: number; scrollDistance: number } | null>(null);
+  const [currentY, setCurrentY] = useState(0);
+  const lastUpdateTimeRef = useRef(0);
+
+  if (valuesRef.current === null) {
+
+    // Generate random values for the spinning effect
+    const randomValues = generateRandomReelValues(REEL_ANIMATION.valuesPerCycle);
+
+    // Place the final value in the middle-ish position (not at the end)
+    const finalValueIndex = randomValues.length - 1;
+    randomValues[finalValueIndex] = finalValue;
+
+    // Add extra values after the final value to create infinite wheel illusion
+    // This ensures there's content visible below the final value
+    const extraValuesCount = 5; // Add 5 more values after the target
+    for (let i = 0; i < extraValuesCount; i++) {
+      randomValues.push(generateRandomReelValues(1)[0]);
+    }
+
+    // Calculate scroll distance to center the final value
+    // NOTE: The final value will be LARGER when centered due to py-6 (48px) vs py-4 (32px)
+    // Regular items: text-[32px] + py-4 (32px padding) = 80px total (measured from DOM)
+    // Centered item: text-[64px] + py-6 (48px padding) + border (6px) = 150px total (measured from DOM)
+    // Gap between items: gap-16 = 64px
+
+    const regularItemHeight = 80; // Regular items during spin (measured from DOM)
+    const centeredItemHeight = 150; // Final item when centered and stopped (measured from DOM)
+    const gapBetween = 64;
+    const viewportHeight = 720;
+    const viewportCenter = viewportHeight / 2;
+
+    // Calculate position: all regular items up to (but not including) the final value
+    // Each regular item + gap = regularItemHeight + gapBetween
+    const regularItemsBeforeFinal = finalValueIndex;
+    const positionBeforeFinalValue = regularItemsBeforeFinal * (regularItemHeight + gapBetween);
+
+    // Position where the final value's center would be (using its centered height)
+    const finalValueCenterPosition = positionBeforeFinalValue + (centeredItemHeight / 2);
+
+    // How far we need to scroll to align the final value's center with viewport center
+    // Positive y moves content down, negative moves content up
+    const scrollDistance = viewportCenter - finalValueCenterPosition;
+
+    valuesRef.current = { values: randomValues, centerIndex: finalValueIndex, scrollDistance };
+  }
+
+  const { values, centerIndex, scrollDistance } = valuesRef.current;
+
+  // Constants for centering calculation (must match initialization values)
+  const regularItemHeight = 80; // Measured from DOM
+  const gapBetween = 64;
+  const viewportHeight = 720;
+  const viewportCenter = viewportHeight / 2;
+
+  // Determine which value is currently centered based on scroll position
+  const getCurrentCenteredIndex = (y: number) => {
+    // y is the current transform position (can be positive or negative)
+    // When y = 0, first item is at top of viewport
+    // When y is positive, content moves down (earlier items visible)
+    // When y is negative, content moves up (later items visible)
+
+    let closestIndex = 0;
+    let minDistance = Infinity;
+
+    for (let i = 0; i < values.length; i++) {
+      // Position of this item's top edge at y=0 (all items are regular height during spin)
+      const itemTopPosition = i * (regularItemHeight + gapBetween);
+      // Center of this item at y=0
+      const itemCenterAtZero = itemTopPosition + (regularItemHeight / 2);
+      // Center of this item after applying current transform
+      const itemCurrentCenter = itemCenterAtZero + y;
+      // Distance from viewport center
+      const distanceFromCenter = Math.abs(itemCurrentCenter - viewportCenter);
+
+      if (distanceFromCenter < minDistance) {
+        minDistance = distanceFromCenter;
+        closestIndex = i;
+      }
+    }
+
+    return closestIndex;
+  };
+
+  const currentCenteredIndex = getCurrentCenteredIndex(currentY);
+
+  return (
+    <motion.div
+      className="absolute flex flex-col items-center gap-16"
+      style={{ top: 0, left: 0, right: 0 }}
+      initial={{ y: 0 }}
+      animate={{ y: scrollDistance }}
+      transition={{
+        duration: REEL_ANIMATION.spinDuration / 1000,
+        ease: [0.33, 1, 0.68, 1],
+      }}
+      onUpdate={(latest: any) => {
+        if (latest.y !== undefined) {
+          // Throttle updates to every 100ms to reduce re-renders
+          const now = Date.now();
+          if (now - lastUpdateTimeRef.current > 100) {
+            lastUpdateTimeRef.current = now;
+            setCurrentY(latest.y);
+          }
+        }
+      }}
+    >
+      {values.map((value, i) => {
+        // Highlight the value that's currently centered during spin
+        // When stopped, keep the final value highlighted
+        const isCentered = isStopped ? (i === centerIndex) : (i === currentCenteredIndex);
+
+        return (
+          <div
+            key={`${index}-${i}`}
+            className={`rounded-lg ${isCentered ? 'py-6 px-4' : 'py-4 px-4'} max-w-full`}
+            style={{
+              backgroundColor: isCentered
+                ? getValueTierBgWithOpacity(value, 0.5)
+                : getValueTierBgWithOpacity(value, 0.15),
+              border: isCentered ? `3px solid ${getValueTierBgWithOpacity(value, 0.9)}` : 'none',
+              boxShadow: isCentered ? `0 0 30px ${getValueTierBgWithOpacity(value, 0.6)}` : 'none',
+              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)', // Smooth easing
+            }}
+          >
+            <div
+              className={`font-bold ${
+                isCentered
+                  ? `text-[52px] ${getValueTierColor(value)} ${getValueTierGlow(value)}`
+                  : 'text-[32px] text-gray-300 opacity-70'
+              }`}
+              style={{
+                ...(isCentered ? {} : REEL_STYLES.spinningText),
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)', // Smooth easing
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                maxWidth: '100%',
+              }}
+            >
+              {formatReelValue(value)}
+            </div>
+          </div>
+        );
+      })}
+    </motion.div>
+  );
+};
+
 export function SpinningAnimation({ spin }: SpinningAnimationProps) {
   const [reelStates, setReelStates] = useState<ReelStateData[]>(
     REEL_NAMES.map(() => ({ state: 'idle', startTime: 0 }))
@@ -75,8 +267,8 @@ export function SpinningAnimation({ spin }: SpinningAnimationProps) {
             i === index ? { ...item, state: 'stopped' } : item
           )
         );
-        // Play landing sound
-        audioManager.play(SOUNDS.REEL_STOP, 0.5);
+        // Play landing sound (using TICK as placeholder until reel-stop.mp3 is added)
+        audioManager.play(SOUNDS.TICK, 0.5);
       }, startDelay + totalReelDuration);
 
       timers.push(startTimer, completeTimer);
@@ -99,101 +291,6 @@ export function SpinningAnimation({ spin }: SpinningAnimationProps) {
       }, 1000); // 1 second delay to appreciate the final stopped state
     }
   }, [reelStates, allReelsComplete]);
-
-  // Sub-component: Reel with logo cover that slides away
-  const IdleReel = memo(({ reelName, brandColor }: { reelName: string; brandColor: string }) => (
-    <motion.div
-      className="absolute inset-0 flex items-center justify-center px-4 rounded-lg"
-      exit={{ y: -600, opacity: 0 }}
-      transition={{ duration: 0.5, ease: 'easeOut' }}
-      style={{
-        backgroundColor: brandColor,
-      }}
-    >
-      <div
-        className="text-[48px] font-bold text-center break-words text-white"
-        style={{
-          maxWidth: '100%',
-          wordWrap: 'break-word',
-          textShadow: '0 4px 8px rgba(0, 0, 0, 0.3)',
-        }}
-      >
-        {reelName}
-      </div>
-    </motion.div>
-  ));
-
-  // Sub-component: Spinning reel (scrolls through random values and lands on final value)
-  const SpinningReel = memo(({ index, finalValue, isStopped }: { index: number; finalValue: number; isStopped: boolean }) => {
-    // Generate values once and store in ref to prevent regeneration
-    const valuesRef = useRef<{ values: number[]; centerIndex: number } | null>(null);
-
-    if (valuesRef.current === null) {
-      console.log(`Reel ${index} INITIALIZING with finalValue:`, finalValue);
-
-      // Generate random values for the spinning effect
-      const randomValues = generateRandomReelValues(REEL_ANIMATION.valuesPerCycle);
-
-      // Place the final value at the LAST position
-      const finalValueIndex = randomValues.length - 1;
-      randomValues[finalValueIndex] = finalValue;
-
-      valuesRef.current = { values: randomValues, centerIndex: finalValueIndex };
-    }
-
-    const { values, centerIndex } = valuesRef.current;
-
-    // Calculate scroll distance
-    const itemHeight = 96;
-    const gapBetween = 64;
-    const totalItemHeight = itemHeight + gapBetween;
-    const viewportHeight = 720;
-    const viewportCenter = viewportHeight / 2;
-    const lastItemCenterPosition = (centerIndex * totalItemHeight) + (itemHeight / 2);
-    const scrollDistance = viewportCenter - lastItemCenterPosition;
-
-    return (
-      <motion.div
-        className="absolute inset-0 flex flex-col items-center gap-16 justify-start"
-        initial={{ y: 0 }}
-        animate={{ y: scrollDistance }}
-        transition={{
-          duration: REEL_ANIMATION.spinDuration / 1000,
-          ease: [0.33, 1, 0.68, 1],
-        }}
-      >
-        {values.map((value, i) => {
-          // Highlight the final value when stopped
-          const isCentered = isStopped && (i === centerIndex);
-
-          return (
-            <div
-              key={`${index}-${i}`}
-              className={`rounded-lg transition-all duration-100 ${isCentered ? 'py-6 px-8' : 'py-4 px-6'}`}
-              style={{
-                backgroundColor: isCentered
-                  ? getValueTierBgWithOpacity(value, 0.5)
-                  : getValueTierBgWithOpacity(value, 0.15),
-                border: isCentered ? `3px solid ${getValueTierBgWithOpacity(value, 0.9)}` : 'none',
-                boxShadow: isCentered ? `0 0 30px ${getValueTierBgWithOpacity(value, 0.6)}` : 'none',
-              }}
-            >
-              <div
-                className={`font-bold whitespace-nowrap transition-all duration-100 ${
-                  isCentered
-                    ? `text-[64px] ${getValueTierColor(value)} ${getValueTierGlow(value)}`
-                    : 'text-[32px] text-gray-300 opacity-70'
-                }`}
-                style={isCentered ? {} : REEL_STYLES.spinningText}
-              >
-                {formatReelValue(value)}
-              </div>
-            </div>
-          );
-        })}
-      </motion.div>
-    );
-  });
 
   // Get brand color for each reel
   const getBrandColor = (index: number): string => {
@@ -267,7 +364,7 @@ export function SpinningAnimation({ spin }: SpinningAnimationProps) {
                       <div className={`
                         ${PORTRAIT_LAYOUT.components.reels.height}
                         bg-gray-900 rounded-xl border-4 shadow-2xl overflow-hidden
-                        flex items-center justify-center relative
+                        relative
                         transition-all duration-300
                         ${isActive ? 'border-primary-500' : 'border-gray-700'}
                         ${reelState.state === 'stopped' ? 'border-yellow-400' : ''}
@@ -277,13 +374,11 @@ export function SpinningAnimation({ spin }: SpinningAnimationProps) {
                         <div className="absolute bottom-0 inset-x-0 h-40 bg-gradient-to-t from-gray-900 via-gray-900/80 to-transparent pointer-events-none z-10" />
 
                         {reelState.state === 'idle' && (
-                          <AnimatePresence>
-                            <IdleReel
-                              key="idle"
-                              reelName={name}
-                              brandColor={getBrandColor(index)}
-                            />
-                          </AnimatePresence>
+                          <IdleReel
+                            key="idle"
+                            reelName={name}
+                            brandColor={getBrandColor(index)}
+                          />
                         )}
                         {(reelState.state === 'spinning' || reelState.state === 'stopped') && (
                           <SpinningReel
