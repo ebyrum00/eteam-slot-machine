@@ -79,6 +79,7 @@ const SpinningReel = ({ index, finalValue, isStopped }: { index: number; finalVa
   const valuesRef = useRef<{ values: number[]; centerIndex: number; scrollDistance: number } | null>(null);
   const [currentY, setCurrentY] = useState(0);
   const lastUpdateTimeRef = useRef(0);
+  const lastCenteredIndexRef = useRef(-1); // Track which value was last centered for tick sound
 
   if (valuesRef.current === null) {
 
@@ -97,13 +98,13 @@ const SpinningReel = ({ index, finalValue, isStopped }: { index: number; finalVa
     }
 
     // Calculate scroll distance to center the final value
-    // NOTE: With reduced padding (py-2 = 16px), items are more compact
-    // Regular items: text-[28px] + py-2 (16px padding) ≈ 60px total
-    // Centered item: text-[40px] + py-2 (16px padding) + border (6px) ≈ 72px total
+    // NOTE: The final value will be LARGER when centered due to py-6 (48px) vs py-4 (32px)
+    // Regular items: text-[32px] + py-4 (32px padding) = 80px total (measured from DOM)
+    // Centered item: text-[64px] + py-6 (48px padding) + border (6px) = 150px total (measured from DOM)
     // Gap between items: gap-16 = 64px
 
-    const regularItemHeight = 60; // Regular items during spin
-    const centeredItemHeight = 72; // Final item when centered and stopped
+    const regularItemHeight = 80; // Regular items during spin (measured from DOM)
+    const centeredItemHeight = 150; // Final item when centered and stopped (measured from DOM)
     const gapBetween = 64;
     const viewportHeight = 720;
     const viewportCenter = viewportHeight / 2;
@@ -126,7 +127,7 @@ const SpinningReel = ({ index, finalValue, isStopped }: { index: number; finalVa
   const { values, centerIndex, scrollDistance } = valuesRef.current;
 
   // Constants for centering calculation (must match initialization values)
-  const regularItemHeight = 60; // Measured from DOM (with py-2 padding)
+  const regularItemHeight = 80; // Measured from DOM
   const gapBetween = 64;
   const viewportHeight = 720;
   const viewportCenter = viewportHeight / 2;
@@ -162,6 +163,15 @@ const SpinningReel = ({ index, finalValue, isStopped }: { index: number; finalVa
 
   const currentCenteredIndex = getCurrentCenteredIndex(currentY);
 
+  // Play tick sound when a new value becomes centered (only during spinning, not when stopped)
+  useEffect(() => {
+    if (!isStopped && currentCenteredIndex !== lastCenteredIndexRef.current && lastCenteredIndexRef.current !== -1) {
+      // Play tick sound at low volume
+      audioManager.play(SOUNDS.TICK, 0.3);
+    }
+    lastCenteredIndexRef.current = currentCenteredIndex;
+  }, [currentCenteredIndex, isStopped]);
+
   return (
     <motion.div
       className="absolute flex flex-col items-center gap-16"
@@ -191,7 +201,7 @@ const SpinningReel = ({ index, finalValue, isStopped }: { index: number; finalVa
         return (
           <div
             key={`${index}-${i}`}
-            className={`rounded-lg ${isCentered ? 'py-2 px-2' : 'py-2 px-2'} max-w-full`}
+            className={`rounded-lg ${isCentered ? 'py-6 px-4' : 'py-4 px-4'} flex items-center justify-center`}
             style={{
               backgroundColor: isCentered
                 ? getValueTierBgWithOpacity(value, 0.5)
@@ -202,18 +212,14 @@ const SpinningReel = ({ index, finalValue, isStopped }: { index: number; finalVa
             }}
           >
             <div
-              className={`font-bold ${
+              className={`font-bold text-center ${
                 isCentered
-                  ? `text-[40px] ${getValueTierColor(value)} ${getValueTierGlow(value)}`
-                  : 'text-[28px] text-gray-300 opacity-70'
+                  ? `text-[52px] ${getValueTierColor(value)} ${getValueTierGlow(value)}`
+                  : 'text-[32px] text-gray-300 opacity-70'
               }`}
               style={{
                 ...(isCentered ? {} : REEL_STYLES.spinningText),
                 transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)', // Smooth easing
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-                maxWidth: '100%',
               }}
             >
               {formatReelValue(value)}
@@ -267,8 +273,8 @@ export function SpinningAnimation({ spin }: SpinningAnimationProps) {
             i === index ? { ...item, state: 'stopped' } : item
           )
         );
-        // Play landing sound (using TICK as placeholder until reel-stop.mp3 is added)
-        audioManager.play(SOUNDS.TICK, 0.5);
+        // Play reel stop sound
+        audioManager.play(SOUNDS.REEL_STOP, 0.5);
       }, startDelay + totalReelDuration);
 
       timers.push(startTimer, completeTimer);
@@ -329,15 +335,12 @@ export function SpinningAnimation({ spin }: SpinningAnimationProps) {
           animate={{ opacity: 1, y: 0 }}
           className="text-center"
         >
-          <h1 className={`${PORTRAIT_LAYOUT.typography.title} font-bold text-primary-500`}>
-            Spinning...
-          </h1>
         </motion.div>
 
         {/* Reels */}
-        <div className="w-full">
-          <div className="px-4">
-            <div className="grid grid-cols-5 gap-3">
+        <Card>
+          <CardBody className={PORTRAIT_LAYOUT.padding.card}>
+            <div className={`grid grid-cols-5 ${PORTRAIT_LAYOUT.components.reels.gap}`}>
               {REEL_NAMES.map((name, index) => {
                 const reelState = reelStates[index];
                 const isActive = reelState.state === 'spinning' || reelState.state === 'stopping';
@@ -425,8 +428,8 @@ export function SpinningAnimation({ spin }: SpinningAnimationProps) {
                 );
               })}
             </div>
-          </div>
-        </div>
+          </CardBody>
+        </Card>
       </div>
     </div>
   );

@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Audio Test - Winston Slots</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+      background: #1a1a1a;
+      color: #fff;
+    }
+    button {
+      background: #4CAF50;
+      color: white;
+      border: none;
+      padding: 15px 32px;
+      text-align: center;
+      font-size: 16px;
+      margin: 10px 5px;
+      cursor: pointer;
+      border-radius: 5px;
+    }
+    button:hover { background: #45a049; }
+    button:disabled { background: #666; cursor: not-allowed; }
+    .status {
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 5px;
+      background: #333;
+    }
+    .success { color: #4CAF50; }
+    .error { color: #f44336; }
+    .info { color: #2196F3; }
+    h1 { color: #F59E0B; }
+  </style>
+</head>
+<body>
+  <h1>🎰 Winston Slots Audio Test</h1>
+  <div id="status" class="status info">Click a button to test audio...</div>
+
+  <h2>System Tests:</h2>
+  <button onclick="testAudioContext()">1. Test AudioContext</button>
+  <button onclick="testHTMLAudio()">2. Test HTML Audio Element</button>
+  <button onclick="testUserGesture()">3. Test After User Gesture</button>
+
+  <h2>Sound Files:</h2>
+  <button onclick="playSound('tick')">Play tick.wav</button>
+  <button onclick="playSound('win-normal')">Play win-normal.wav</button>
+  <button onclick="playSound('win-big')">Play win-big.wav</button>
+  <button onclick="playSound('win-epic')">Play win-epic.wav</button>
+  <button onclick="playSound('win-legendary')">Play win-legendary.wav</button>
+  <button onclick="playSound('reel-stop')">Play reel-stop.wav</button>
+
+  <h2>System Info:</h2>
+  <div id="info" class="status"></div>
+
+  <script>
+    const log = (msg, type = 'info') => {
+      const status = document.getElementById('status');
+      status.className = `status ${type}`;
+      status.textContent = msg;
+      console.log(msg);
+    };
+
+    // Display system info
+    const info = document.getElementById('info');
+    info.innerHTML = `
+      <strong>Browser:</strong> ${navigator.userAgent}<br>
+      <strong>Platform:</strong> ${navigator.platform}<br>
+      <strong>Audio Support:</strong> ${window.AudioContext || window.webkitAudioContext ? 'Yes' : 'No'}<br>
+    `;
+
+    let audioContext = null;
+
+    function testAudioContext() {
+      try {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        log(`✅ AudioContext created. State: ${audioContext.state}`, 'success');
+
+        if (audioContext.state === 'suspended') {
+          log('⚠️ AudioContext is suspended. Trying to resume...', 'info');
+          audioContext.resume().then(() => {
+            log(`✅ AudioContext resumed. State: ${audioContext.state}`, 'success');
+          }).catch(err => {
+            log(`❌ Failed to resume: ${err.message}`, 'error');
+          });
+        }
+      } catch (err) {
+        log(`❌ AudioContext error: ${err.message}`, 'error');
+      }
+    }
+
+    function testHTMLAudio() {
+      try {
+        const audio = new Audio('/sounds/tick.wav');
+        audio.play()
+          .then(() => log('✅ HTML Audio element works!', 'success'))
+          .catch(err => log(`❌ HTML Audio error: ${err.message}`, 'error'));
+      } catch (err) {
+        log(`❌ HTML Audio error: ${err.message}`, 'error');
+      }
+    }
+
+    function testUserGesture() {
+      log('✅ User gesture detected. Testing audio...', 'info');
+      testAudioContext();
+      setTimeout(() => playSound('tick'), 500);
+    }
+
+    async function playSound(name) {
+      try {
+        if (!audioContext) {
+          audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        }
+
+        if (audioContext.state === 'suspended') {
+          await audioContext.resume();
+        }
+
+        log(`Loading ${name}.wav...`, 'info');
+
+        const response = await fetch(`/sounds/${name}.wav`);
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const arrayBuffer = await response.arrayBuffer();
+        log(`Decoding ${name}.wav...`, 'info');
+
+        const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+        log(`Playing ${name}.wav...`, 'info');
+
+        const source = audioContext.createBufferSource();
+        source.buffer = audioBuffer;
+        source.connect(audioContext.destination);
+        source.start(0);
+
+        source.onended = () => {
+          log(`✅ ${name}.wav played successfully!`, 'success');
+        };
+
+      } catch (err) {
+        log(`❌ Error playing ${name}: ${err.message}`, 'error');
+        console.error(err);
+      }
+    }
+
+    // Auto-detect audio context state changes
+    if (window.AudioContext || window.webkitAudioContext) {
+      testAudioContext();
+    }
+  </script>
+</body>
+</html>

@@ -7,7 +7,9 @@ import { audioManager } from '../utils/audioManager';
 export function AudioToggle() {
   const [muted, setMuted] = useState(audioManager.isMuted());
 
-  const handleToggle = () => {
+  const handleToggle = async () => {
+    // Resume AudioContext on first user interaction
+    await audioManager.resume();
     const newMutedState = audioManager.toggleMute();
     setMuted(newMutedState);
   };

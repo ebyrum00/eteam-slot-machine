@@ -8,6 +8,7 @@ class AudioManager {
   constructor() {
     if (typeof window !== 'undefined') {
       this.context = new (window.AudioContext || (window as any).webkitAudioContext)();
+      console.log('🎵 AudioManager initialized. Context state:', this.context?.state);
     }
   }
 
@@ -18,12 +19,17 @@ class AudioManager {
     if (!this.context) return;
 
     try {
+      console.log(`Loading sound: ${name} from ${url}`);
       const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
       const arrayBuffer = await response.arrayBuffer();
       const audioBuffer = await this.context.decodeAudioData(arrayBuffer);
       this.sounds.set(name, audioBuffer);
+      console.log(`✅ Successfully loaded sound: ${name}`);
     } catch (error) {
-      console.warn(`Failed to load sound: ${name}`, error);
+      console.error(`❌ Failed to load sound: ${name} from ${url}`, error);
     }
   }
 
@@ -32,7 +38,11 @@ class AudioManager {
    */
   async resume(): Promise<void> {
     if (this.context && this.context.state === 'suspended') {
+      console.log('🎵 Resuming AudioContext from suspended state...');
       await this.context.resume();
+      console.log('✅ AudioContext resumed. State:', this.context.state);
+    } else if (this.context) {
+      console.log('AudioContext already running. State:', this.context.state);
     }
   }
 
@@ -40,17 +50,21 @@ class AudioManager {
    * Play a sound
    */
   async play(name: string, volume: number = 1.0): Promise<void> {
-    if (!this.context || this.muted) return;
+    if (!this.context || this.muted) {
+      console.log(`Not playing ${name}: context=${!!this.context}, muted=${this.muted}`);
+      return;
+    }
 
     // Resume context if suspended (browser autoplay policy)
     await this.resume();
 
     const buffer = this.sounds.get(name);
     if (!buffer) {
-      console.warn(`Sound not loaded: ${name}`);
+      console.warn(`❌ Sound not loaded: ${name}. Available sounds:`, Array.from(this.sounds.keys()));
       return;
     }
 
+    console.log(`🔊 Playing sound: ${name} at volume ${volume}`);
     const source = this.context.createBufferSource();
     const gainNode = this.context.createGain();
 
@@ -96,18 +110,19 @@ export const SOUNDS = {
  * Call this on app initialization
  */
 export const preloadSounds = async (): Promise<void> => {
-  // TODO: Add actual sound files to /public/sounds/
-  // For now, these will fail gracefully
+  console.log('🎵 preloadSounds() called');
   const soundsToLoad = [
-    { name: SOUNDS.TICK, url: '/sounds/tick.mp3' },
-    { name: SOUNDS.REEL_STOP, url: '/sounds/reel-stop.mp3' },
-    { name: SOUNDS.WIN_NORMAL, url: '/sounds/win-normal.mp3' },
-    { name: SOUNDS.WIN_BIG, url: '/sounds/win-big.mp3' },
-    { name: SOUNDS.WIN_EPIC, url: '/sounds/win-epic.mp3' },
-    { name: SOUNDS.WIN_LEGENDARY, url: '/sounds/win-legendary.mp3' },
+    { name: SOUNDS.TICK, url: '/sounds/tick.wav' },
+    { name: SOUNDS.REEL_STOP, url: '/sounds/reel-stop.wav' },
+    { name: SOUNDS.WIN_NORMAL, url: '/sounds/win-normal.wav' },
+    { name: SOUNDS.WIN_BIG, url: '/sounds/win-big.wav' },
+    { name: SOUNDS.WIN_EPIC, url: '/sounds/win-epic.wav' },
+    { name: SOUNDS.WIN_LEGENDARY, url: '/sounds/win-legendary.wav' },
   ];
 
+  console.log(`🎵 Loading ${soundsToLoad.length} sounds...`);
   await Promise.all(
     soundsToLoad.map(({ name, url }) => audioManager.loadSound(name, url))
   );
+  console.log('🎵 preloadSounds() completed');
 };

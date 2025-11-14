@@ -56,20 +56,20 @@ export function ResultsScreen({ spin }: ResultsScreenProps) {
     return () => clearInterval(interval);
   }, [spin.total_score]);
 
-  // Play win sound effect based on tier
+  // Play win sound effect based on tier (at 70% volume)
   useEffect(() => {
     switch (winTier) {
       case WinTier.Legendary:
-        audioManager.play(SOUNDS.WIN_LEGENDARY);
+        audioManager.play(SOUNDS.WIN_LEGENDARY, 0.7);
         break;
       case WinTier.Epic:
-        audioManager.play(SOUNDS.WIN_EPIC);
+        audioManager.play(SOUNDS.WIN_EPIC, 0.7);
         break;
       case WinTier.Big:
-        audioManager.play(SOUNDS.WIN_BIG);
+        audioManager.play(SOUNDS.WIN_BIG, 0.7);
         break;
       default:
-        audioManager.play(SOUNDS.WIN_NORMAL);
+        audioManager.play(SOUNDS.WIN_NORMAL, 0.7);
     }
   }, [winTier]);
 

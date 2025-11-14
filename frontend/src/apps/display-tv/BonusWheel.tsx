@@ -120,9 +120,6 @@ export function BonusWheel({ spin }: BonusWheelProps) {
           <h1 className={`${PORTRAIT_LAYOUT.typography.title} font-bold text-yellow-400 mb-4`}>
             BONUS ROUND!
           </h1>
-          <p className="text-3xl text-gray-300 font-semibold">
-            Double-Sided Deal
-          </p>
           <p className="text-xl text-gray-400 mt-2 mb-8">
             Will your deal hold together?
           </p>
