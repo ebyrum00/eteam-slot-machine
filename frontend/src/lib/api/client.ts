@@ -78,10 +78,10 @@ class APIClient {
   }
 
   // Spins
-  async createSpin(playerId: number): Promise<Spin> {
+  async createSpin(playerId: number, testBonus: boolean = false): Promise<Spin> {
     return this.request<Spin>('/api/spins', {
       method: 'POST',
-      body: JSON.stringify({ player_id: playerId }),
+      body: JSON.stringify({ player_id: playerId, test_bonus: testBonus }),
     });
   }
 

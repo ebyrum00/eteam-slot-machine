@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { QADebugger, type QATestResult } from '../../utils/qaDebug';
 import { Card, CardBody, Button } from '../../components';
+import { apiClient } from '../../lib/api/client';
 
 export function QADebugPanel() {
   const [isRunning, setIsRunning] = useState(false);
@@ -21,6 +22,26 @@ export function QADebugPanel() {
       console.error('QA tests failed:', error);
     } finally {
       setIsRunning(false);
+    }
+  };
+
+  const testBonusFeature = async () => {
+    try {
+      // Create a test player
+      const player = await apiClient.createPlayer({
+        name: 'Bonus Test Player',
+        email: 'bonus@test.com',
+        phone: '555-BONUS',
+      });
+
+      // Create a spin with test_bonus flag
+      const spin = await apiClient.createSpin(player.id, true);
+
+      console.log('Bonus test spin created:', spin);
+      alert(`Bonus test spin created!\nSpin ID: ${spin.id}\nBanana count: ${spin.banana_count}\nBonus triggered: ${spin.bonus_triggered}\n\nCheck the TV display to see the bonus wheel!`);
+    } catch (error) {
+      console.error('Failed to create bonus test:', error);
+      alert('Failed to create bonus test. Check console for details.');
     }
   };
 
@@ -49,13 +70,21 @@ export function QADebugPanel() {
                   Runs 20 spins and validates timing, alignment, and FPS
                 </p>
               </div>
-              <Button
-                onClick={runTests}
-                disabled={isRunning}
-                className="px-8 py-4 text-xl"
-              >
-                {isRunning ? 'Running...' : 'Run Tests'}
-              </Button>
+              <div className="flex gap-4">
+                <Button
+                  onClick={testBonusFeature}
+                  className="px-8 py-4 text-xl bg-yellow-600 hover:bg-yellow-700"
+                >
+                  Test Bonus Feature
+                </Button>
+                <Button
+                  onClick={runTests}
+                  disabled={isRunning}
+                  className="px-8 py-4 text-xl"
+                >
+                  {isRunning ? 'Running...' : 'Run Tests'}
+                </Button>
+              </div>
             </div>
 
             {summary && (

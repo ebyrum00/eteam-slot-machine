@@ -2,7 +2,19 @@ module Api
   class SpinsController < ApplicationController
     def create
       player = Player.find(params[:player_id])
-      spin = player.spins.create!
+
+      # Check if test_bonus mode is enabled (for testing bonus feature)
+      if params[:test_bonus] == true || params[:test_bonus] == 'true'
+        spin = player.spins.create!(
+          zillow_value: 3_000_000,
+          realtor_value: 3_000_000,
+          homes_value: 3_000_000,
+          google_value: 500_000,
+          smart_sign_value: 750_000
+        )
+      else
+        spin = player.spins.create!
+      end
 
       # Broadcast that a spin has started (game state: spinning)
       ActionCable.server.broadcast(

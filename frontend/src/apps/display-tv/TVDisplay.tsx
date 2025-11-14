@@ -5,6 +5,7 @@ import { useGameStore } from '../../lib/stores/gameStore';
 import { IdleLeaderboard } from './IdleLeaderboard';
 import { WaitingScreen } from './WaitingScreen';
 import { SpinningAnimation } from './SpinningAnimation';
+import { BonusWheel } from './BonusWheel';
 import { ResultsScreen } from './ResultsScreen';
 import { FullPageLoading, ScreenTransition, AudioToggle } from '../../components';
 import { TRANSITION_TIMING } from '../../config';
@@ -96,6 +97,17 @@ export function TVDisplay() {
               <SpinningAnimation spin={currentSpin} />
             ) : (
               <FullPageLoading message="Generating spin..." />
+            )}
+          </ScreenTransition>
+        );
+
+      case 'bonus_wheel':
+        return (
+          <ScreenTransition transitionKey="bonus_wheel">
+            {currentSpin ? (
+              <BonusWheel spin={currentSpin} />
+            ) : (
+              <FullPageLoading message="Loading bonus..." />
             )}
           </ScreenTransition>
         );

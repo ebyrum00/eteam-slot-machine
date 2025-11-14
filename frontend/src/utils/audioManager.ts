@@ -28,10 +28,22 @@ class AudioManager {
   }
 
   /**
+   * Resume audio context (needed for browser autoplay policies)
+   */
+  async resume(): Promise<void> {
+    if (this.context && this.context.state === 'suspended') {
+      await this.context.resume();
+    }
+  }
+
+  /**
    * Play a sound
    */
-  play(name: string, volume: number = 1.0): void {
+  async play(name: string, volume: number = 1.0): Promise<void> {
     if (!this.context || this.muted) return;
+
+    // Resume context if suspended (browser autoplay policy)
+    await this.resume();
 
     const buffer = this.sounds.get(name);
     if (!buffer) {

@@ -97,13 +97,13 @@ const SpinningReel = ({ index, finalValue, isStopped }: { index: number; finalVa
     }
 
     // Calculate scroll distance to center the final value
-    // NOTE: The final value will be LARGER when centered due to py-6 (48px) vs py-4 (32px)
-    // Regular items: text-[32px] + py-4 (32px padding) = 80px total (measured from DOM)
-    // Centered item: text-[64px] + py-6 (48px padding) + border (6px) = 150px total (measured from DOM)
+    // NOTE: With reduced padding (py-2 = 16px), items are more compact
+    // Regular items: text-[28px] + py-2 (16px padding) ≈ 60px total
+    // Centered item: text-[40px] + py-2 (16px padding) + border (6px) ≈ 72px total
     // Gap between items: gap-16 = 64px
 
-    const regularItemHeight = 80; // Regular items during spin (measured from DOM)
-    const centeredItemHeight = 150; // Final item when centered and stopped (measured from DOM)
+    const regularItemHeight = 60; // Regular items during spin
+    const centeredItemHeight = 72; // Final item when centered and stopped
     const gapBetween = 64;
     const viewportHeight = 720;
     const viewportCenter = viewportHeight / 2;
@@ -126,7 +126,7 @@ const SpinningReel = ({ index, finalValue, isStopped }: { index: number; finalVa
   const { values, centerIndex, scrollDistance } = valuesRef.current;
 
   // Constants for centering calculation (must match initialization values)
-  const regularItemHeight = 80; // Measured from DOM
+  const regularItemHeight = 60; // Measured from DOM (with py-2 padding)
   const gapBetween = 64;
   const viewportHeight = 720;
   const viewportCenter = viewportHeight / 2;
@@ -191,7 +191,7 @@ const SpinningReel = ({ index, finalValue, isStopped }: { index: number; finalVa
         return (
           <div
             key={`${index}-${i}`}
-            className={`rounded-lg ${isCentered ? 'py-6 px-4' : 'py-4 px-4'} max-w-full`}
+            className={`rounded-lg ${isCentered ? 'py-2 px-2' : 'py-2 px-2'} max-w-full`}
             style={{
               backgroundColor: isCentered
                 ? getValueTierBgWithOpacity(value, 0.5)
@@ -204,8 +204,8 @@ const SpinningReel = ({ index, finalValue, isStopped }: { index: number; finalVa
             <div
               className={`font-bold ${
                 isCentered
-                  ? `text-[52px] ${getValueTierColor(value)} ${getValueTierGlow(value)}`
-                  : 'text-[32px] text-gray-300 opacity-70'
+                  ? `text-[40px] ${getValueTierColor(value)} ${getValueTierGlow(value)}`
+                  : 'text-[28px] text-gray-300 opacity-70'
               }`}
               style={{
                 ...(isCentered ? {} : REEL_STYLES.spinningText),
@@ -277,20 +277,28 @@ export function SpinningAnimation({ spin }: SpinningAnimationProps) {
     return () => timers.forEach(clearTimeout);
   }, []);
 
-  // Check if all reels are complete and transition to results
+  // Check if all reels are complete and transition to bonus or results
   useEffect(() => {
     const allStopped = reelStates.every(reel => reel.state === 'stopped');
     if (allStopped && !allReelsComplete) {
       setAllReelsComplete(true);
-      // Wait a moment to show the final state, then trigger results transition
+      // Wait a moment to show the final state, then check for bonus or go to results
       setTimeout(() => {
-        // Update game state to results via API
-        apiClient.transitionToResults().catch(err =>
-          console.error('Failed to transition to results:', err)
-        );
+        // Check if bonus was triggered (3+ bananas)
+        if (spin.bonus_triggered) {
+          // Transition to bonus wheel
+          apiClient.updateGameState({ state: 'bonus_wheel', spin_id: spin.id }).catch(err =>
+            console.error('Failed to transition to bonus wheel:', err)
+          );
+        } else {
+          // No bonus, go straight to results
+          apiClient.transitionToResults().catch(err =>
+            console.error('Failed to transition to results:', err)
+          );
+        }
       }, 1000); // 1 second delay to appreciate the final stopped state
     }
-  }, [reelStates, allReelsComplete]);
+  }, [reelStates, allReelsComplete, spin.id, spin.bonus_triggered]);
 
   // Get brand color for each reel
   const getBrandColor = (index: number): string => {
@@ -327,9 +335,9 @@ export function SpinningAnimation({ spin }: SpinningAnimationProps) {
         </motion.div>
 
         {/* Reels */}
-        <Card>
-          <CardBody className={PORTRAIT_LAYOUT.padding.card}>
-            <div className={`grid grid-cols-5 ${PORTRAIT_LAYOUT.components.reels.gap}`}>
+        <div className="w-full">
+          <div className="px-4">
+            <div className="grid grid-cols-5 gap-3">
               {REEL_NAMES.map((name, index) => {
                 const reelState = reelStates[index];
                 const isActive = reelState.state === 'spinning' || reelState.state === 'stopping';
@@ -417,8 +425,8 @@ export function SpinningAnimation({ spin }: SpinningAnimationProps) {
                 );
               })}
             </div>
-          </CardBody>
-        </Card>
+          </div>
+        </div>
       </div>
     </div>
   );
