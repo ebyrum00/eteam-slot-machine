@@ -27,6 +27,7 @@ export function ResultsScreen({ spin }: ResultsScreenProps) {
 
   const hasBonus = spin.bonus_triggered;
   const [displayScore, setDisplayScore] = useState(0);
+  const [countUpComplete, setCountUpComplete] = useState(false);
   const winTier = getWinTier(spin.total_score);
   const showBigWinEffects = shouldPlayBigWinEffects(spin.total_score);
   const [shake, setShake] = useState(false);
@@ -47,6 +48,7 @@ export function ResultsScreen({ spin }: ResultsScreenProps) {
 
       if (step >= steps) {
         setDisplayScore(spin.total_score);
+        setCountUpComplete(true);
         clearInterval(interval);
       } else {
         setDisplayScore(Math.floor(current));
@@ -99,33 +101,32 @@ export function ResultsScreen({ spin }: ResultsScreenProps) {
 
   return (
     <ScreenShake shake={shake} intensity={screenShakeIntensity}>
-      <div className={`min-h-screen flex items-center justify-center ${PORTRAIT_LAYOUT.padding.screen} bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900`}>
-        {/* Big win effects with tiered intensity */}
+      <div className={`min-h-screen flex items-center justify-center ${PORTRAIT_LAYOUT.padding.screen} bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 relative overflow-hidden`}>
+        {/* Ambient background shimmer matching other screens */}
+        <motion.div
+          className="absolute inset-0 bg-gradient-to-br from-transparent via-blue-500/5 to-transparent pointer-events-none"
+          animate={{
+            x: ['-100%', '100%'],
+            opacity: [0.3, 0.6, 0.3],
+          }}
+          transition={{
+            duration: 4,
+            repeat: Infinity,
+            ease: 'linear',
+          }}
+        />
+        {/* Simplified win effects - performance optimized */}
         {showBigWinEffects && (
           <>
-            {/* Confetti explosion */}
+            {/* Confetti explosion - reduced count for performance */}
             <Confetti
-              count={confettiCount}
+              count={Math.min(confettiCount, 50)}
               colors={
                 winTier === WinTier.Legendary
                   ? ['#FCD34D', '#F59E0B', '#FBBF24', '#F97316']
                   : ['#F59E0B', '#FCD34D', '#F97316', '#EF4444']
               }
               duration={RESULTS_ANIMATION.confettiDuration / 1000}
-            />
-
-            {/* Pulsing overlay - more intense for legendary */}
-            <motion.div
-              className={`absolute inset-0 pointer-events-none ${
-                winTier === WinTier.Legendary
-                  ? 'bg-gradient-to-br from-yellow-400/40 to-orange-500/40'
-                  : 'bg-gradient-to-br from-yellow-500/30 to-orange-500/30'
-              }`}
-              animate={{ opacity: [0, 0.7, 0] }}
-              transition={{
-                duration: 1,
-                repeat: winTier === WinTier.Legendary ? 5 : 3
-              }}
             />
           </>
         )}
@@ -143,7 +144,12 @@ export function ResultsScreen({ spin }: ResultsScreenProps) {
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
-              className={`${PORTRAIT_LAYOUT.typography.large} font-bold text-gray-300 uppercase tracking-wide`}
+              className={`${PORTRAIT_LAYOUT.typography.large} font-bold uppercase tracking-wide text-transparent bg-clip-text bg-gradient-to-r ${
+                winTier === WinTier.Legendary ? 'from-yellow-300 via-yellow-400 to-amber-500' :
+                winTier === WinTier.Epic ? 'from-orange-400 via-orange-500 to-red-500' :
+                winTier === WinTier.Big ? 'from-blue-400 via-blue-500 to-purple-500' :
+                'from-gray-300 via-gray-200 to-gray-300'
+              }`}
             >
               {playerName.toUpperCase()}'S TOTAL
             </motion.p>
@@ -192,24 +198,26 @@ export function ResultsScreen({ spin }: ResultsScreenProps) {
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.3, type: 'spring' }}
           >
-            <Card>
-              <CardBody className={`${PORTRAIT_LAYOUT.padding.cardBody} bg-gradient-to-br from-gray-800 to-gray-900`}>
-                <motion.div
-                  animate={winTier !== WinTier.Normal ? {
-                    scale: [1, 1.05, 1],
-                  } : {}}
-                  transition={{
-                    duration: 2,
-                    repeat: Infinity,
-                    ease: 'easeInOut',
-                  }}
-                >
+            <Card className={`${
+              winTier === WinTier.Legendary ? 'border-2 border-yellow-400/50' :
+              winTier === WinTier.Epic ? 'border-2 border-orange-500/50' :
+              winTier === WinTier.Big ? 'border-2 border-blue-500/50' :
+              ''
+            }`}>
+              <CardBody className={`${PORTRAIT_LAYOUT.padding.cardBody} bg-gradient-to-br ${
+                winTier === WinTier.Legendary ? 'from-yellow-900/20 via-gray-800 to-amber-900/20' :
+                winTier === WinTier.Epic ? 'from-orange-900/20 via-gray-800 to-red-900/20' :
+                winTier === WinTier.Big ? 'from-blue-900/20 via-gray-800 to-purple-900/20' :
+                'from-gray-800 to-gray-900'
+              } relative overflow-hidden`}>
+                {/* Removed shimmer and scale animations for performance */}
+                <div>
                   <ScoreDisplay
                     score={displayScore}
                     label=""
                     size="lg"
                   />
-                </motion.div>
+                </div>
                 {spin.bonus_multiplier && spin.bonus_multiplier > 1 && (
                   <motion.p
                     initial={{ opacity: 0 }}
@@ -225,8 +233,8 @@ export function ResultsScreen({ spin }: ResultsScreenProps) {
           </motion.div>
 
           {/* Reel Values Breakdown */}
-          <Card>
-            <CardBody className={PORTRAIT_LAYOUT.padding.cardCompact}>
+          <Card className="border border-gray-700/50">
+            <CardBody className={`${PORTRAIT_LAYOUT.padding.cardCompact} bg-gradient-to-br from-gray-800/80 to-gray-900/80`}>
               <ReelValueDisplay
                 values={{
                   zillow: spin.zillow_value,
@@ -265,17 +273,19 @@ export function ResultsScreen({ spin }: ResultsScreenProps) {
             </CardBody>
           </Card>
 
-          {/* Auto-return message */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 2 }}
-            className="text-center"
-          >
-            <p className={`${PORTRAIT_LAYOUT.typography.medium} text-gray-400`}>
-              Returning to leaderboard...
-            </p>
-          </motion.div>
+          {/* Auto-return message - only show after count-up completes */}
+          {countUpComplete && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.5 }}
+              className="text-center"
+            >
+              <p className={`${PORTRAIT_LAYOUT.typography.medium} text-gray-400`}>
+                Returning to leaderboard...
+              </p>
+            </motion.div>
+          )}
         </div>
       </div>
     </ScreenShake>

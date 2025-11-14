@@ -10,9 +10,9 @@ export const WinTier = {
 export type WinTier = typeof WinTier[keyof typeof WinTier];
 
 export const getWinTier = (total: number): WinTier => {
-  if (total >= 5_000_000) return WinTier.Legendary;
-  if (total >= 3_000_000) return WinTier.Epic;
-  if (total >= 2_000_000) return WinTier.Big;
+  if (total >= 7_000_000) return WinTier.Legendary;
+  if (total >= 5_000_000) return WinTier.Epic;
+  if (total >= 3_000_000) return WinTier.Big;
   return WinTier.Normal;
 };
 

@@ -256,18 +256,6 @@ export function PlayerRegistration({ onComplete }: PlayerRegistrationProps) {
                   <p className="text-red-500 text-sm">{errors.form}</p>
                 </motion.div>
               )}
-
-              {isFormValid && (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  className="p-4 bg-gradient-to-r from-primary-500/10 to-yellow-500/10 border border-primary-500/30 rounded-lg text-center"
-                >
-                  <p className="text-primary-400 font-semibold text-lg">
-                    🎰 You're all set! Hit that button! 🎰
-                  </p>
-                </motion.div>
-              )}
             </form>
           </CardBody>
 
