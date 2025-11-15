@@ -12,7 +12,7 @@ import {
   formatReelValue,
   generateRandomReelValues,
 } from '../../utils/reelTiers';
-import { audioManager, SOUNDS } from '../../utils/audioManager';
+import { audioManager, SOUNDS, getHitSoundForValue } from '../../utils/audioManager';
 import { apiClient } from '../../lib/api/client';
 import { REEL_ANIMATION, BRAND_COLORS, PORTRAIT_LAYOUT } from '../../config';
 
@@ -20,7 +20,7 @@ interface SpinningAnimationProps {
   spin: Spin;
 }
 
-type ReelState = 'idle' | 'spinning' | 'stopping' | 'stopped';
+type ReelState = 'idle' | 'revealing' | 'spinning' | 'stopping' | 'stopped';
 
 interface ReelStateData {
   state: ReelState;
@@ -33,42 +33,47 @@ const REEL_STYLES = {
   stoppingText: { textShadow: '0 0 30px rgba(239, 68, 68, 0.6)' },
 } as const;
 
-// Sub-component: Reel with brand logo/name cover that slides away
+// Sub-component: Reel with brand logo/name cover that slides down to reveal
 const IdleReel = memo(({ reelName, brandColor }: { reelName: string; brandColor: string }) => {
-  // Brand name formatting (simpler, cleaner display)
-  const getBrandDisplay = (name: string) => {
-    const brandMap: { [key: string]: string } = {
-      'Zillow': 'ZILLOW',
-      'Realtor': 'REALTOR',
-      'Homes.com': 'HOMES.COM',
-      'Google': 'GOOGLE',
-      'Smart Sign': 'SMART SIGN',
+  // Brand logo image mapping
+  const getLogoImage = (name: string) => {
+    const logoMap: { [key: string]: string } = {
+      'Zillow': '/images/zillow-logo.png',
+      'Realtor': '/images/realtor-logo.png',
+      'Homes.com': '/images/homes-logo.png',
+      'Google': '/images/google-logo.png',
+      'Smart Sign': '/images/agentfinder.png',
     };
-    return brandMap[name] || name.toUpperCase();
+    return logoMap[name];
   };
+
+  const logoSrc = getLogoImage(reelName);
 
   return (
     <motion.div
-      className="absolute inset-0 flex items-center justify-center px-4 rounded-lg"
+      className="absolute inset-0 flex items-center justify-center p-8 rounded-lg"
       initial={{ y: 0, opacity: 1 }}
       animate={{ y: 0, opacity: 1 }}
-      exit={{ y: -600, opacity: 0 }}
-      transition={{ duration: 0.5, ease: 'easeOut' }}
+      exit={{ y: 600, opacity: 0 }}
+      transition={{ duration: 0.6, ease: 'easeIn' }}
       style={{
         backgroundColor: brandColor,
       }}
     >
-      <div
-        className="text-[56px] font-black text-center tracking-wider text-white"
-        style={{
-          maxWidth: '100%',
-          wordWrap: 'break-word',
-          textShadow: '0 6px 12px rgba(0, 0, 0, 0.4), 0 2px 4px rgba(0, 0, 0, 0.3)',
-          letterSpacing: '0.05em',
-        }}
-      >
-        {getBrandDisplay(reelName)}
-      </div>
+      {logoSrc ? (
+        <img
+          src={logoSrc}
+          alt={reelName}
+          className="w-full h-full object-contain"
+          style={{
+            filter: 'drop-shadow(0 6px 12px rgba(0, 0, 0, 0.4))',
+          }}
+        />
+      ) : (
+        <div className="text-[56px] font-black text-center tracking-wider text-white">
+          {reelName}
+        </div>
+      )}
     </motion.div>
   );
 });
@@ -236,6 +241,7 @@ export function SpinningAnimation({ spin }: SpinningAnimationProps) {
     REEL_NAMES.map(() => ({ state: 'idle', startTime: 0 }))
   );
   const [allReelsComplete, setAllReelsComplete] = useState(false);
+  const [bananasLanded, setBananasLanded] = useState(0);
 
   const reelValues = [
     spin.zillow_value,
@@ -250,13 +256,25 @@ export function SpinningAnimation({ spin }: SpinningAnimationProps) {
     const timers: ReturnType<typeof setTimeout>[] = [];
     const totalReelDuration = REEL_ANIMATION.spinDuration; // 5000ms per reel
     const pauseBetweenReels = 800; // 800ms pause between reels
+    const revealDuration = 600; // 600ms for cover slide-down animation
 
     REEL_NAMES.forEach((_, index) => {
       // Calculate start time: each reel starts after previous completes + pause
-      const startDelay = index * (totalReelDuration + pauseBetweenReels);
+      const startDelay = index * (totalReelDuration + pauseBetweenReels + revealDuration);
 
-      // Start spinning
-      const startTimer = setTimeout(() => {
+      // Start revealing (cover slides down)
+      const revealTimer = setTimeout(() => {
+        setReelStates((prev) =>
+          prev.map((item, i) =>
+            i === index
+              ? { state: 'revealing', startTime: Date.now() }
+              : item
+          )
+        );
+      }, startDelay);
+
+      // Start spinning (after reveal completes)
+      const spinTimer = setTimeout(() => {
         setReelStates((prev) =>
           prev.map((item, i) =>
             i === index
@@ -264,7 +282,7 @@ export function SpinningAnimation({ spin }: SpinningAnimationProps) {
               : item
           )
         );
-      }, startDelay);
+      }, startDelay + revealDuration);
 
       // Mark as fully stopped (for pop animation) - happens when animation completes
       const completeTimer = setTimeout(() => {
@@ -273,11 +291,33 @@ export function SpinningAnimation({ spin }: SpinningAnimationProps) {
             i === index ? { ...item, state: 'stopped' } : item
           )
         );
-        // Play reel stop sound
-        audioManager.play(SOUNDS.REEL_STOP, 0.5);
-      }, startDelay + totalReelDuration);
 
-      timers.push(startTimer, completeTimer);
+        const finalValue = reelValues[index];
+
+        // Handle banana sounds
+        if (finalValue === 3_000_000) {
+          setBananasLanded(prev => {
+            const newCount = prev + 1;
+            // Play feature hit sound based on banana count
+            if (newCount === 1) {
+              audioManager.play(SOUNDS.FEATURE_HIT_1, 0.7);
+            } else if (newCount === 2) {
+              audioManager.play(SOUNDS.FEATURE_HIT_2, 0.7);
+            } else if (newCount === 3) {
+              audioManager.play(SOUNDS.FEATURE_HIT_3, 0.7);
+            }
+            return newCount;
+          });
+        } else {
+          // Play hit sound based on value tier
+          const hitSound = getHitSoundForValue(finalValue);
+          if (hitSound) {
+            audioManager.play(hitSound, 0.6);
+          }
+        }
+      }, startDelay + revealDuration + totalReelDuration);
+
+      timers.push(revealTimer, spinTimer, completeTimer);
     });
 
     return () => timers.forEach(clearTimeout);
@@ -292,6 +332,8 @@ export function SpinningAnimation({ spin }: SpinningAnimationProps) {
       setTimeout(() => {
         // Check if bonus was triggered (3+ bananas)
         if (spin.bonus_triggered) {
+          // Play feature unlocked sound
+          audioManager.play(SOUNDS.FEATURE_UNLOCKED, 0.8);
           // Transition to bonus wheel
           apiClient.updateGameState({ state: 'bonus_wheel', spin_id: spin.id }).catch(err =>
             console.error('Failed to transition to bonus wheel:', err)
@@ -384,14 +426,8 @@ export function SpinningAnimation({ spin }: SpinningAnimationProps) {
                         <div className="absolute top-0 inset-x-0 h-40 bg-gradient-to-b from-gray-900 via-gray-900/80 to-transparent pointer-events-none z-10" />
                         <div className="absolute bottom-0 inset-x-0 h-40 bg-gradient-to-t from-gray-900 via-gray-900/80 to-transparent pointer-events-none z-10" />
 
-                        {reelState.state === 'idle' && (
-                          <IdleReel
-                            key="idle"
-                            reelName={name}
-                            brandColor={getBrandColor(index)}
-                          />
-                        )}
-                        {(reelState.state === 'spinning' || reelState.state === 'stopped') && (
+                        {/* Show SpinningReel behind cover during reveal/spin/stopped */}
+                        {(reelState.state === 'revealing' || reelState.state === 'spinning' || reelState.state === 'stopped') && (
                           <SpinningReel
                             key={`spin-${spin.id}-${index}`}
                             index={index}
@@ -399,6 +435,17 @@ export function SpinningAnimation({ spin }: SpinningAnimationProps) {
                             isStopped={reelState.state === 'stopped'}
                           />
                         )}
+
+                        {/* AnimatePresence allows exit animation when state changes from idle/revealing */}
+                        <AnimatePresence>
+                          {(reelState.state === 'idle' || reelState.state === 'revealing') && (
+                            <IdleReel
+                              key="idle"
+                              reelName={name}
+                              brandColor={getBrandColor(index)}
+                            />
+                          )}
+                        </AnimatePresence>
                       </div>
                     </div>
 
@@ -430,6 +477,21 @@ export function SpinningAnimation({ spin }: SpinningAnimationProps) {
             </div>
           </CardBody>
         </Card>
+
+        {/* Banana Instructions */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5, duration: 0.5 }}
+          className="text-center mt-8 space-y-2"
+        >
+          <p className={`${PORTRAIT_LAYOUT.typography.medium} text-gray-400`}>
+            🍌 = $3,000,000
+          </p>
+          <p className={`${PORTRAIT_LAYOUT.typography.medium} text-gray-400`}>
+            🍌🍌🍌 = bonus feature
+          </p>
+        </motion.div>
       </div>
     </div>
   );

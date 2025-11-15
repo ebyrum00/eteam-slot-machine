@@ -4,7 +4,7 @@ import { apiClient } from '../../lib/api/client';
 import { Card, CardHeader, CardBody, CardFooter, Input, Button } from '../../components';
 import { motion } from 'framer-motion';
 import type { Player } from '../../types/api';
-import { audioManager } from '../../utils/audioManager';
+import { audioManager, SOUNDS } from '../../utils/audioManager';
 
 interface PlayerRegistrationProps {
   onComplete: (player: Player) => void;
@@ -25,6 +25,8 @@ export function PlayerRegistration({ onComplete }: PlayerRegistrationProps) {
   const createPlayerMutation = useMutation({
     mutationFn: apiClient.createPlayer.bind(apiClient),
     onSuccess: (player: Player) => {
+      // Play notification sound on successful submission
+      audioManager.play(SOUNDS.NOTIFICATION, 0.6);
       onComplete(player);
     },
     onError: (error) => {

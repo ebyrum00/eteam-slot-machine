@@ -39,6 +39,9 @@ export function ResultsScreen({ spin }: ResultsScreenProps) {
     let current = 0;
     let step = 0;
 
+    // Play payout sound during count-up
+    audioManager.play(SOUNDS.PAYOUT, 0.5);
+
     const interval = setInterval(() => {
       step++;
       // Ease-out curve for count-up
@@ -156,20 +159,9 @@ export function ResultsScreen({ spin }: ResultsScreenProps) {
 
             {hasBonus ? (
               <>
-                <motion.h1
-                  animate={{
-                    scale: [1, 1.1, 1],
-                    color: ['#ef4444', '#f59e0b', '#ef4444'],
-                  }}
-                  transition={{
-                    duration: 1,
-                    repeat: Infinity,
-                    ease: 'easeInOut',
-                  }}
-                  className={`${PORTRAIT_LAYOUT.typography.hero} font-bold`}
-                >
+                <h1 className={`${PORTRAIT_LAYOUT.typography.hero} font-bold text-yellow-400`}>
                   🍌 BONUS! 🍌
-                </motion.h1>
+                </h1>
                 <p className={`${PORTRAIT_LAYOUT.typography.large} text-gray-300`}>
                   {spin.banana_count} Bananas! Bonus wheel activated!
                 </p>
@@ -179,13 +171,9 @@ export function ResultsScreen({ spin }: ResultsScreenProps) {
                 className={`${PORTRAIT_LAYOUT.typography.hero} font-bold ${
                   winTier === WinTier.Legendary ? 'text-yellow-400' :
                   winTier === WinTier.Epic ? 'text-orange-500' :
-                  winTier === WinTier.Big ? 'text-primary-500' :
-                  'text-primary-500'
+                  winTier === WinTier.Big ? 'text-blue-500' :
+                  'text-blue-500'
                 }`}
-                style={{
-                  transform: 'translateZ(0)',
-                  willChange: 'auto',
-                }}
               >
                 {getWinMessage(spin.total_score)}
               </h1>

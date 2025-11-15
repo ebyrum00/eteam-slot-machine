@@ -10,7 +10,7 @@ import { ResultsScreen } from './ResultsScreen';
 import { FullPageLoading, ScreenTransition, AudioToggle } from '../../components';
 import { TRANSITION_TIMING } from '../../config';
 import type { Spin } from '../../types/api';
-import { audioManager } from '../../utils/audioManager';
+import { audioManager, SOUNDS } from '../../utils/audioManager';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export function TVDisplay() {
@@ -59,6 +59,25 @@ export function TVDisplay() {
       }, TRANSITION_TIMING.leaderboardReturn);
     }
   }, [gameState, currentSpin]);
+
+  // Music playback based on game state
+  useEffect(() => {
+    if (!gameState || !audioEnabled) return;
+
+    const state = gameState.state;
+
+    // Play idle music during idle and ready states
+    if (state === 'idle' || state === 'ready') {
+      audioManager.playMusic(SOUNDS.IDLE_MUSIC, 0.25, 2);
+    }
+    // Switch to spin music when spinning starts
+    else if (state === 'spinning') {
+      audioManager.switchMusic(SOUNDS.SPIN_MUSIC, 0.3, 1, 1);
+    }
+    // Continue spin music during bonus_wheel and results
+    // (no change needed, let it keep playing)
+
+  }, [gameState?.state, audioEnabled]);
 
   // Show loading while fetching spin data
   if (isLoading && gameState?.state === 'spinning') {
@@ -138,6 +157,10 @@ export function TVDisplay() {
   const handleEnableAudio = async () => {
     await audioManager.resume();
     setAudioEnabled(true);
+    // Start idle music when audio is first enabled
+    if (gameState?.state === 'idle' || gameState?.state === 'ready') {
+      audioManager.playMusic(SOUNDS.IDLE_MUSIC, 0.25, 2);
+    }
   };
 
   return (

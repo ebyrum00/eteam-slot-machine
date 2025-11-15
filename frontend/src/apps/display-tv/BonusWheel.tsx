@@ -1,6 +1,6 @@
 // frontend/src/apps/display-tv/BonusWheel.tsx
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { PORTRAIT_LAYOUT, BRAND_COLORS } from '../../config';
 import { audioManager, SOUNDS } from '../../utils/audioManager';
@@ -33,6 +33,7 @@ export function BonusWheel({ spin }: BonusWheelProps) {
   const [spinning, setSpinning] = useState(false);
   const [finalRotation, setFinalRotation] = useState(0);
   const [landedMultiplier, setLandedMultiplier] = useState<number | null>(null);
+  const lastSectionRef = useRef<number>(-1);
 
   useEffect(() => {
     // Start spinning after a brief delay
@@ -150,6 +151,21 @@ export function BonusWheel({ spin }: BonusWheelProps) {
               transition={{
                 duration: 8,
                 ease: [0.2, 0.8, 0.2, 1], // Smooth deceleration
+              }}
+              onUpdate={(latest: any) => {
+                if (latest.rotate !== undefined && spinning) {
+                  // Calculate which section is currently at the top
+                  // Normalize rotation to 0-360 range
+                  const normalizedRotation = latest.rotate % 360;
+                  // Determine which section is at top (accounting for counter-clockwise rotation)
+                  const currentSection = Math.floor((360 - normalizedRotation + (DEGREES_PER_SECTION / 2)) / DEGREES_PER_SECTION) % SECTION_COUNT;
+
+                  // Play tick when crossing into a new section
+                  if (currentSection !== lastSectionRef.current && lastSectionRef.current !== -1) {
+                    audioManager.play(SOUNDS.TICK, 0.3);
+                  }
+                  lastSectionRef.current = currentSection;
+                }
               }}
               className="relative w-[600px] h-[600px]"
             >
